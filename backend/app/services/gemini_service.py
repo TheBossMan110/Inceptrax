@@ -4,7 +4,8 @@ import time
 import re
 import requests
 import google.generativeai as genai
-from flask import current_app
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class GeminiService:
@@ -18,12 +19,12 @@ class GeminiService:
     @staticmethod
     def get_model(system_instruction=None):
         """Get a configured Gemini model instance."""
-        api_key = current_app.config.get('GEMINI_API_KEY')
+        api_key = os.getenv('GEMINI_API_KEY')
         if not api_key:
             raise ValueError("GEMINI_API_KEY is not set. Add it to your .env file.")
 
         genai.configure(api_key=api_key)
-        model_name = current_app.config.get('GEMINI_MODEL', 'gemini-2.5-flash')
+        model_name = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
 
         kwargs = {}
         if system_instruction:

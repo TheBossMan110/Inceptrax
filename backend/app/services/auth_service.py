@@ -1,7 +1,8 @@
 import jwt
 import datetime
 import os
-from flask import current_app
+from dotenv import load_dotenv
+load_dotenv()
 from app.models.user_model import User, TokenBlacklist
 from app import get_db
 
@@ -11,7 +12,7 @@ class AuthService:
 
     @staticmethod
     def generate_tokens(user_id):
-        secret = current_app.config.get('JWT_SECRET_KEY', current_app.config.get('SECRET_KEY'))
+        secret = os.getenv('JWT_SECRET_KEY', os.getenv('SECRET_KEY'))
 
         access_token = jwt.encode({
             'sub': user_id,
@@ -40,7 +41,7 @@ class AuthService:
             if TokenBlacklist.find_by_token(token):
                 return 'Token has been revoked'
 
-            secret = current_app.config.get('JWT_SECRET_KEY', current_app.config.get('SECRET_KEY'))
+            secret = os.getenv('JWT_SECRET_KEY', os.getenv('SECRET_KEY'))
             payload = jwt.decode(token, secret, algorithms=['HS256'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
@@ -54,7 +55,7 @@ class AuthService:
             if TokenBlacklist.find_by_token(token):
                 return None, 'Token has been revoked'
 
-            secret = current_app.config.get('JWT_SECRET_KEY', current_app.config.get('SECRET_KEY'))
+            secret = os.getenv('JWT_SECRET_KEY', os.getenv('SECRET_KEY'))
             payload = jwt.decode(token, secret, algorithms=['HS256'])
 
             if payload.get('type') != 'refresh':

@@ -1,4 +1,4 @@
-from flask import jsonify
+"""Response formatter utility — Flask-free version."""
 
 class ResponseFormatter:
     @staticmethod
@@ -8,7 +8,7 @@ class ResponseFormatter:
             "message": message,
             "data": data
         }
-        return jsonify(response), status
+        return response, status
 
     @staticmethod
     def error(message="Error", status=400, errors=None):
@@ -18,4 +18,4 @@ class ResponseFormatter:
         }
         if errors:
             response["errors"] = errors
-        return jsonify(response), status
+        return response, status

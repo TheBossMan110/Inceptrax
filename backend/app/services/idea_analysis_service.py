@@ -1,7 +1,8 @@
 import os
 import json
 import time
-from flask import current_app
+from dotenv import load_dotenv
+load_dotenv()
 from app.services.gemini_service import GeminiService
 from app.services.market_service import MarketService
 from app.models.user_model import Idea, User, StageResult, Notification
