@@ -25,7 +25,7 @@ class EmailService:
     def _send_via_resend(api_key, name, user_email, subject, message, type='contact'):
         """Send email via Resend API — cleaner, more reliable than SMTP."""
         try:
-            recipient = os.environ.get('MAIL_USERNAME', 'hmzaakram295@gmail.com')
+            recipient = os.environ.get('ADMIN_EMAIL', 'Inceptrax921@gmail.com')
 
             html_body = f"""
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -78,7 +78,7 @@ class EmailService:
 
         sender_email = os.getenv('MAIL_USERNAME')
         sender_password = os.getenv('MAIL_PASSWORD')
-        recipient_email = "hmzaakram295@gmail.com"
+        recipient_email = os.getenv('ADMIN_EMAIL', 'Inceptrax921@gmail.com')
 
         if not sender_email or not sender_password:
             logging.error("Mail credentials not configured")

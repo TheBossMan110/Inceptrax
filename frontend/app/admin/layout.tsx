@@ -21,7 +21,7 @@ export default function AdminLayout({
     if (!loading) {
       if (!user || !user.is_admin) {
         // Redirect non-admins or unauthenticated users
-        // The hmzaakram295@gmail.com is hardcoded as admin in the DB migration
+        // Admin check uses is_admin flag from the database
         router.push("/dashboard")
       }
     }

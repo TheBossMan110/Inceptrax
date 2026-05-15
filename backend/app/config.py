@@ -27,3 +27,9 @@ class Config:
     # Token expiry (in days)
     JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv('JWT_ACCESS_EXPIRES', '7'))
     JWT_REFRESH_TOKEN_EXPIRES = int(os.getenv('JWT_REFRESH_EXPIRES', '30'))
+
+    # Admin
+    ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'Inceptrax921@gmail.com')
+
+    # Observability — leave empty to disable in development
+    SENTRY_DSN = os.getenv('SENTRY_DSN', '')

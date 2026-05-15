@@ -103,7 +103,7 @@ def upgrade_db():
 
 
         # Seed the admin user if not exists
-        admin_email = "hmzaakram295@gmail.com"
+        admin_email = "Inceptrax921@gmail.com"
         admin = User.query.filter_by(email=admin_email).first()
         if not admin:
             admin = User(
@@ -112,7 +112,7 @@ def upgrade_db():
                 email=admin_email,
                 is_admin=True
             )
-            admin.set_password("dear036409")
+            admin.set_password("Inceptrax@921%")
             db.session.add(admin)
             print(f"Created admin user {admin_email}")
         else:

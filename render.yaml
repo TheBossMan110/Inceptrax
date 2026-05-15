@@ -1,0 +1,24 @@
+# ════════════════════════════════════════════════════════════════════════
+# Inceptrax — Render Deploy Configuration
+# ════════════════════════════════════════════════════════════════════════
+# Render reads this file for build/deploy settings.
+# Secrets come from Doppler integration, not this file.
+#
+# Docs: https://render.com/docs/infrastructure-as-code
+# ════════════════════════════════════════════════════════════════════════
+
+services:
+  - type: web
+    name: inceptrax-backend
+    runtime: docker
+    plan: free          # Switch to "starter" ($7/mo) after first paying user
+    region: oregon
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://www.inceptrax.com
+      # All other secrets injected via Doppler or Render dashboard

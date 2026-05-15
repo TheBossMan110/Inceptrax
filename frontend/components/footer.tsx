@@ -69,13 +69,13 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
           <p>© 2026 Inceptrax Inc. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            <Link href="https://x.com/hmzaakram00" className="hover:text-primary transition-colors">
+            <Link href="https://x.com/TODO_ZAKI_FILL_THIS" className="hover:text-primary transition-colors">
               Twitter
             </Link>
-            <Link href="https://www.linkedin.com/in/hamza-akram-7ba804394?utm_source=share_via&utm_content=profile&utm_medium=member_android" className="hover:text-primary transition-colors">
+            <Link href="https://linkedin.com/in/TODO_ZAKI_FILL_THIS" className="hover:text-primary transition-colors">
               LinkedIn
             </Link>
-            <Link href="https://github.com/HmzaAkram" className="hover:text-primary transition-colors">
+            <Link href="https://github.com/TODO_ZAKI_FILL_THIS" className="hover:text-primary transition-colors">
               GitHub
             </Link>
           </div>

@@ -1,0 +1,33 @@
+# ─── Dependencies (reinstalled in container) ──────────────────────────
+node_modules/
+
+# ─── Build output (rebuilt in container) ───────────────────────────────
+.next/
+
+# ─── Environment files (secrets) ──────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── IDE / Editor ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── Misc ──────────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.md
+
+# ─── Docker files ──────────────────────────────────────────────────────
+Dockerfile
+.dockerignore
+
+# ─── Git ───────────────────────────────────────────────────────────────
+.git
+.gitignore
+
+# ─── Lockfile alternatives ─────────────────────────────────────────────
+pnpm-lock.yaml
+yarn.lock

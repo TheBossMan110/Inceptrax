@@ -1,0 +1,27 @@
+# ─── OS files ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ─── IDE / Editor ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ─── Environment files ────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# ─── Docker overrides (local only) ────────────────────────────────────
+docker-compose.override.yml
+
+# ─── Misc ──────────────────────────────────────────────────────────────
+*.log
+*.tmp

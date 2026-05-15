@@ -1,0 +1,55 @@
+# ════════════════════════════════════════════════════════════════════════
+# Inceptrax — Docker Compose (Production-Like)
+# ════════════════════════════════════════════════════════════════════════
+# FastAPI backend (uvicorn) + Next.js frontend (standalone)
+#
+# Usage:
+#   docker compose build        — build both images
+#   docker compose up           — start both services
+#   docker compose up -d        — start detached
+#   docker compose down         — stop and remove containers
+#   docker compose logs -f      — tail logs from both services
+# ════════════════════════════════════════════════════════════════════════
+
+services:
+  # ─── Backend (FastAPI + Uvicorn) ───────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: inceptrax-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - APP_ENV=development
+      - FRONTEND_URL=http://localhost:3000
+    restart: unless-stopped
+    networks:
+      - inceptrax-net
+
+  # ─── Frontend (Next.js 16) ──────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5000/api
+    container_name: inceptrax-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env.local
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - inceptrax-net
+
+networks:
+  inceptrax-net:
+    driver: bridge
