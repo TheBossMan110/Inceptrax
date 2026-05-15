@@ -64,11 +64,15 @@ export function ExportModal({ open, onOpenChange, ideaId, ideaTitle }: ExportMod
     }
     setIsGenerating(true)
     try {
+      const token = localStorage.getItem('access_token');
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/ideas/${ideaId}/export/ppt`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+          },
           credentials: "include",
           body: JSON.stringify({
             theme: selectedTheme,

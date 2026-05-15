@@ -2,12 +2,11 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+import { apiFetch } from '@/lib/api';
 
 interface AuthContextType {
     user: any;
-    login: (user: any) => void;
+    login: (user: any, token?: string, refreshToken?: string) => void;
     logout: () => void;
     loading: boolean;
     isAuthenticated: boolean;
@@ -21,23 +20,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
 
-    // On mount: verify auth by calling /auth/me (cookie sent automatically)
+    // On mount: verify auth by calling /auth/me (token sent via Bearer header)
     useEffect(() => {
         async function checkAuth() {
             try {
-                const res = await fetch(`${API_URL}/auth/me`, {
-                    credentials: 'include',  // sends httpOnly cookie
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setUser(data.user);
-                    // Set session marker for Next.js middleware (non-sensitive, just a flag)
-                    document.cookie = 'auth_session=true; path=/; max-age=604800; SameSite=Lax';
-                } else {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
                     setUser(null);
-                    document.cookie = 'auth_session=; path=/; max-age=0';
+                    setLoading(false);
+                    return;
                 }
+
+                const data = await apiFetch('/auth/me');
+                setUser(data.user);
+                document.cookie = 'auth_session=true; path=/; max-age=604800; SameSite=Lax';
             } catch {
+                // Token is invalid/expired — clear it
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
                 setUser(null);
                 document.cookie = 'auth_session=; path=/; max-age=0';
             } finally {
@@ -59,9 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [user, loading, pathname, router]);
 
-    const login = (newUser: any) => {
-        // Token is already set as httpOnly cookie by the backend
-        // We only store user data for UI rendering
+    const login = (newUser: any, token?: string, refreshToken?: string) => {
+        // Store tokens in localStorage for cross-domain auth
+        if (token) {
+            localStorage.setItem('access_token', token);
+        }
+        if (refreshToken) {
+            localStorage.setItem('refresh_token', refreshToken);
+        }
+
         setUser(newUser);
         document.cookie = 'auth_session=true; path=/; max-age=604800; SameSite=Lax';
 
@@ -74,13 +80,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = async () => {
         try {
-            await fetch(`${API_URL}/auth/logout`, {
-                method: 'POST',
-                credentials: 'include',  // sends httpOnly cookie for blacklisting
-            });
+            await apiFetch('/auth/logout', { method: 'POST' });
         } catch {
             // Proceed with local logout even if API call fails
         }
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         setUser(null);
         document.cookie = 'auth_session=; path=/; max-age=0';
         router.push('/login');

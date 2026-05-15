@@ -83,11 +83,13 @@ export default function InvestorPage() {
 
     setDownloading(true)
     try {
+      const token = localStorage.getItem('access_token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/ideas/${params.id}/${endpoint}`,
         {
           method: 'GET',
           credentials: 'include',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         }
       );
 

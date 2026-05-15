@@ -115,7 +115,7 @@ export default function RegisterPage() {
       })
 
       // Auto-login after successful registration
-      login(data.user)
+      login(data.user, data.token, data.refresh_token)
       toast.success("Account created successfully!")
     } catch (error: any) {
       // NEVER clear form on error — spec requirement

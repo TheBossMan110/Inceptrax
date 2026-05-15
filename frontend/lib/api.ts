@@ -10,15 +10,21 @@ export async function apiFetch<T = any>(endpoint: string, options: RequestInit =
         delete headers['Content-Type'];
     }
 
+    // Attach JWT token from localStorage as Bearer header
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers,
-        credentials: 'include',  // Send httpOnly cookies with every request
+        credentials: 'include',  // Still send cookies (works for same-domain/localhost)
     });
 
     if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || data.error || 'Something went wrong');
+        throw new Error(data.message || data.detail || data.error || 'Something went wrong');
     }
 
     const contentType = response.headers.get('content-type');

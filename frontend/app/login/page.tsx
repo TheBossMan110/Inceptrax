@@ -56,7 +56,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
 
-      login(data.user)
+      login(data.user, data.token, data.refresh_token)
       toast.success("Login successful!")
     } catch (error: any) {
       // Never clear form on error

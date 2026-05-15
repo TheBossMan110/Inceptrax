@@ -54,11 +54,15 @@ export function PdfExportModal({ open, onOpenChange, ideaId, ideaTitle }: PdfExp
     }
     setIsGenerating(true)
     try {
+      const token = localStorage.getItem('access_token');
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/ideas/${ideaId}/export/pdf`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+          },
           credentials: "include",
           body: JSON.stringify({ sections: selectedSections, font: selectedFont }),
         }
