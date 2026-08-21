@@ -24,7 +24,12 @@ class GeminiService:
             raise ValueError("GEMINI_API_KEY is not set. Add it to your .env file.")
 
         genai.configure(api_key=api_key)
-        model_name = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
+        # Model choice lives in model_router so it is decided in one place.
+        try:
+            from app_fastapi.services.model_router import gemini_model
+            model_name = gemini_model("heavy")
+        except Exception:
+            model_name = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
 
         kwargs = {}
         if system_instruction:

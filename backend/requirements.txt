@@ -30,3 +30,7 @@ python-pptx==0.6.23
 
 # ─── Observability ─────────────────────────────────────────────────────
 sentry-sdk[fastapi]==2.19.2
+
+# Claude models for premium tiers (spec §5.1). Optional at runtime —
+# without ANTHROPIC_API_KEY everything routes to Gemini.
+anthropic>=0.40.0

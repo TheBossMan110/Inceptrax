@@ -379,3 +379,59 @@ async def require_idea_slot(db, user_id: int) -> None:
             "upgrade_url": "/dashboard/billing",
         },
     )
+
+
+async def require_feature(db, user_id: int, feature: str) -> None:
+    """
+    Gate a tier-locked feature (spec §3.2).
+
+    Credits limit how MUCH a user can do; this limits WHAT they can do. Both
+    are needed — without this, "Pro unlocks the AI agents" is only true because
+    the frontend hides a button, and anyone calling the API directly gets it
+    free.
+
+    `feature` is an agent name from `agents_allowed`, or "premium_models".
+    """
+    from fastapi import HTTPException
+
+    tier = await CreditService.get_tier(db, user_id)
+    config = TIER_CONFIG.get(tier, TIER_CONFIG["free"])
+
+    if feature == "premium_models":
+        allowed = bool(config.get("premium_models"))
+    else:
+        allowed = feature in config.get("agents_allowed", [])
+
+    if allowed:
+        return
+
+    # Name the cheapest tier that would unlock it, so the upgrade prompt can
+    # point somewhere specific instead of just saying "upgrade".
+    unlocks_at = None
+    for name in ("starter", "pro", "enterprise"):
+        candidate = TIER_CONFIG[name]
+        ok = (
+            bool(candidate.get("premium_models"))
+            if feature == "premium_models"
+            else feature in candidate.get("agents_allowed", [])
+        )
+        if ok:
+            unlocks_at = candidate
+            break
+
+    label = feature.replace("_", " ").title()
+    raise HTTPException(
+        status_code=402,
+        detail={
+            "error": "feature_locked",
+            "message": (
+                f"{label} is not included in your {config['label']} plan."
+                + (f" It unlocks on {unlocks_at['label']}." if unlocks_at else "")
+            ),
+            "feature": feature,
+            "tier": tier,
+            "tier_label": config["label"],
+            "unlocks_at": unlocks_at["label"] if unlocks_at else None,
+            "upgrade_url": "/dashboard/billing",
+        },
+    )

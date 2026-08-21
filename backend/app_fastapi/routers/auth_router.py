@@ -20,8 +20,8 @@ from fastapi.responses import JSONResponse
 from typing import Optional
 
 from app_fastapi.config import settings
-from app_fastapi.dependencies import get_current_user
-from app_fastapi.services.credit_service import TIER_CONFIG, optional_bearer
+from app_fastapi.dependencies import get_current_user, optional_bearer
+from app_fastapi.services.credit_service import TIER_CONFIG
 from app_fastapi.schemas import (
     RegisterRequest, LoginRequest, ForgotPasswordRequest,
     ResetPasswordRequest, RefreshTokenRequest,
