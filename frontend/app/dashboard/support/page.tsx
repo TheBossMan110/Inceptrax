@@ -42,17 +42,22 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 py-12 px-4">
-      <h1 className="text-3xl font-bold text-foreground mb-2">Support Center</h1>
-      <p className="text-muted-foreground mb-8">
-        Have questions or need assistance? Submit a ticket below or check our FAQ.
-      </p>
+    <div className="max-w-3xl mx-auto space-y-6 pb-12">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Support Center</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Have questions or need assistance? Submit a ticket below or check our FAQ.
+        </p>
+      </div>
 
       {/* Support Form */}
-      <Card className="border-none shadow-sm">
+      <Card className="card-premium rounded-2xl border-none shadow-none">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" /> Submit a Ticket
+          <CardTitle className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shrink-0">
+              <MessageSquare className="h-4 w-4 text-brand-cyan" />
+            </div>
+            Submit a Ticket
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -60,6 +65,7 @@ export default function SupportPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 placeholder="Your Name"
+                className="rounded-xl bg-white/[0.03] border-white/[0.08] focus-visible:border-brand/40"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -67,6 +73,7 @@ export default function SupportPage() {
               <Input
                 type="email"
                 placeholder="Your Email"
+                className="rounded-xl bg-white/[0.03] border-white/[0.08] focus-visible:border-brand/40"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -74,12 +81,14 @@ export default function SupportPage() {
             </div>
             <Input
               placeholder="Subject"
+              className="rounded-xl bg-white/[0.03] border-white/[0.08] focus-visible:border-brand/40"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               required
             />
             <Textarea
               placeholder="Message"
+              className="rounded-xl bg-white/[0.03] border-white/[0.08] focus-visible:border-brand/40"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={6}
@@ -88,7 +97,7 @@ export default function SupportPage() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl gap-2"
+              className="rounded-xl gap-2 bg-primary hover:bg-primary/90 glow-primary shimmer press"
             >
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Message"}
             </Button>
@@ -97,28 +106,33 @@ export default function SupportPage() {
       </Card>
 
       {/* FAQ Section */}
-      <Card className="border-none shadow-sm">
+      <Card className="card-premium rounded-2xl border-none shadow-none">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-primary" /> Frequently Asked Questions
+          <CardTitle className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shrink-0">
+              <HelpCircle className="h-4 w-4 text-brand-cyan" />
+            </div>
+            Frequently Asked Questions
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <p className="font-semibold text-foreground">How do I reset my password?</p>
-            <p className="text-muted-foreground text-sm">
+        <CardContent className="space-y-5">
+          <div className="space-y-1.5">
+            <p className="font-semibold text-sm text-foreground">How do I reset my password?</p>
+            <p className="text-muted-foreground text-sm leading-relaxed">
               Go to your profile settings, click “Change Password,” and follow the instructions to reset your password.
             </p>
           </div>
-          <div className="space-y-2">
-            <p className="font-semibold text-foreground">How can I download my reports?</p>
-            <p className="text-muted-foreground text-sm">
+          <div className="divider-glow" />
+          <div className="space-y-1.5">
+            <p className="font-semibold text-sm text-foreground">How can I download my reports?</p>
+            <p className="text-muted-foreground text-sm leading-relaxed">
               Navigate to the “Reports” section in your dashboard. You can download individual reports or export all data as a ZIP.
             </p>
           </div>
-          <div className="space-y-2">
-            <p className="font-semibold text-foreground">How long does it take to generate a custom report?</p>
-            <p className="text-muted-foreground text-sm">
+          <div className="divider-glow" />
+          <div className="space-y-1.5">
+            <p className="font-semibold text-sm text-foreground">How long does it take to generate a custom report?</p>
+            <p className="text-muted-foreground text-sm leading-relaxed">
               Most custom reports are generated within a few minutes. You’ll receive a notification when your report is ready.
             </p>
           </div>
@@ -126,21 +140,27 @@ export default function SupportPage() {
       </Card>
 
       {/* Contact Info */}
-      <Card className="border-none shadow-sm">
+      <Card className="card-premium rounded-2xl border-none shadow-none">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-primary" /> Contact Info
+          <CardTitle className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shrink-0">
+              <Mail className="h-4 w-4 text-brand-cyan" />
+            </div>
+            Contact Info
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <p className="text-muted-foreground">
-            <span className="font-semibold text-foreground">Email:</span> support@inceptrax.com
+        <CardContent className="space-y-2.5">
+          <p className="text-sm text-muted-foreground">
+            <span className="text-[11px] font-mono uppercase tracking-[0.14em] text-muted-foreground/70 mr-2">Email</span>
+            <span className="text-foreground font-medium">support@inceptrax.com</span>
           </p>
-          <p className="text-muted-foreground">
-            <span className="font-semibold text-foreground">Working Hours:</span> Mon-Fri, 9AM - 6PM
+          <p className="text-sm text-muted-foreground">
+            <span className="text-[11px] font-mono uppercase tracking-[0.14em] text-muted-foreground/70 mr-2">Working Hours</span>
+            <span className="text-foreground font-medium">Mon–Fri, 9AM – 6PM</span>
           </p>
-          <p className="text-muted-foreground">
-            <span className="font-semibold text-foreground">Response Time:</span> Typically within 24 hours
+          <p className="text-sm text-muted-foreground">
+            <span className="text-[11px] font-mono uppercase tracking-[0.14em] text-muted-foreground/70 mr-2">Response Time</span>
+            <span className="text-foreground font-medium">Typically within 24 hours</span>
           </p>
         </CardContent>
       </Card>

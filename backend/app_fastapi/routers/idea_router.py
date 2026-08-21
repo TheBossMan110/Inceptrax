@@ -1,12 +1,5 @@
-"""
-Idea Router — FastAPI migration of app/routes/idea_routes.py (Part 1: Core CRUD + Analysis)
-
-This handles: create, list, get, delete, reanalyze, status, visibility, public ideas, shared ideas.
-AI features (layers, stress-test, etc.) are in idea_features_router.py
-Export (PDF/PPT) is in idea_export_router.py
-"""
-
 import asyncio
+import inngest
 import json
 import secrets
 import traceback
@@ -17,6 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app_fastapi.dependencies import get_current_user
+from app_fastapi.inngest_client import inngest_client
 
 router = APIRouter()
 
@@ -104,7 +98,13 @@ async def _run_background_analysis(idea_id: int):
 async def create_idea(body: CreateIdeaRequest, current_user: dict = Depends(get_current_user)):
     """Create a new idea and start background analysis."""
     from app_fastapi import get_db
+    from app_fastapi.services.credit_service import require_credits, require_idea_slot
     db = get_db()
+
+    # Both gates raise a structured 402 so the frontend can show the upgrade
+    # prompt with real numbers, rather than a generic error toast.
+    await require_idea_slot(db, current_user["id"])
+    await require_credits(db, current_user["id"], "analysis")
 
     # Sanitize input
     from app.services.utils.sanitize import sanitize_idea_data
@@ -135,9 +135,15 @@ async def create_idea(body: CreateIdeaRequest, current_user: dict = Depends(get_
     }
     await db.ideas.insert_one(idea_doc)
 
-    # Fire-and-forget background analysis (needs Flask app context for sync services)
-    # Use the sync service wrapped in a thread
-    asyncio.create_task(_run_background_analysis(idea_id))
+    # Dispatch durable background analysis via Inngest
+    try:
+        await inngest_client.send(inngest.Event(
+            name="idea/analysis.requested",
+            data={"idea_id": idea_id, "user_id": current_user["id"]},
+        ))
+    except Exception:
+        # Fallback: run in-process if Inngest is unavailable
+        asyncio.create_task(_run_background_analysis(idea_id))
 
     return _success(data={"idea": _idea_to_dict(idea_doc)}, message="Idea created — analysis started", status=201)
 
@@ -251,13 +257,25 @@ async def toggle_visibility(idea_id: int, body: VisibilityRequest, current_user:
 @router.post("/{idea_id}/reanalyze")
 async def reanalyze_idea(idea_id: int, current_user: dict = Depends(get_current_user)):
     from app_fastapi import get_db
+    from app_fastapi.services.credit_service import require_credits
     db = get_db()
     idea = await _get_idea_or_404(db, idea_id, current_user["id"])
+
+    # A re-analysis runs the full 8-stage pipeline, so it costs the same as a
+    # first analysis. Charged after the run succeeds, inside the Inngest job.
+    await require_credits(db, current_user["id"], "reanalyze")
 
     await db.ideas.update_one({"_id": idea["_id"]}, {"$set": {"status": "processing", "current_stage": 0, "current_stage_name": ""}})
     idea["status"] = "processing"
 
-    asyncio.create_task(_run_background_analysis(idea_id))
+    # Dispatch durable re-analysis via Inngest
+    try:
+        await inngest_client.send(inngest.Event(
+            name="idea/analysis.requested",
+            data={"idea_id": idea_id, "user_id": current_user["id"]},
+        ))
+    except Exception:
+        asyncio.create_task(_run_background_analysis(idea_id))
     return _success(data={"idea": _idea_to_dict(idea)}, message="Re-analysis started")
 
 
@@ -327,12 +345,17 @@ async def post_shared_comment(share_token: str, body: CommentRequest):
 async def generate_investor_pitches(idea_id: int, current_user: dict = Depends(get_current_user)):
     from app_fastapi import get_db
     from app.services.idea_analysis_service import IdeaAnalysisService
+    from app_fastapi.services.credit_service import CreditService, require_credits
     db = get_db()
     await _get_idea_or_404(db, idea_id, current_user["id"])
+
+    await require_credits(db, current_user["id"], "investor_pitch")
 
     pitches = await asyncio.to_thread(IdeaAnalysisService.generate_investor_pitches, idea_id)
     if isinstance(pitches, dict) and "error" in pitches:
         return _error(pitches["error"], 500)
+
+    await CreditService.deduct(db, current_user["id"], "investor_pitch", idea_id)
     return _success(data={"pitches": pitches}, message="Investor pitches generated successfully")
 
 
@@ -341,14 +364,23 @@ async def generate_research_hub(idea_id: int, current_user: dict = Depends(get_c
     from app_fastapi import get_db
     from app.services.idea_analysis_service import IdeaAnalysisService
     db = get_db()
+    from app_fastapi.services.credit_service import CreditService, require_credits
     idea = await _get_idea_or_404(db, idea_id, current_user["id"])
+
+    # Only charge the first generation. Re-opening a hub that already exists
+    # returns cached data and must stay free.
+    ad = idea.get("analysis_data")
+    already_generated = bool(ad and isinstance(ad, dict) and "research_hub" in ad)
+
+    if not already_generated:
+        await require_credits(db, current_user["id"], "research_hub")
 
     hub_data = await asyncio.to_thread(IdeaAnalysisService.generate_research_hub, idea_id)
     if isinstance(hub_data, dict) and "error" in hub_data:
         return _error(hub_data["error"], 500)
 
-    ad = idea.get("analysis_data")
-    if not (ad and isinstance(ad, dict) and "research_hub" in ad):
+    if not already_generated:
+        await CreditService.deduct(db, current_user["id"], "research_hub", idea_id)
         await db.users.update_one({"id": current_user["id"]}, {"$inc": {"api_credits_used": 1}})
 
     return _success(data={"hub": hub_data}, message="Research hub generated successfully")

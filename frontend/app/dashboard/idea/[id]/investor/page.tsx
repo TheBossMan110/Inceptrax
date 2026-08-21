@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Loader2, Briefcase, Copy, Download, Check, AlertCircle, Sparkles, FileText } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -24,16 +23,27 @@ interface Pitch {
   ask?: string
 }
 
-const STYLE_COLORS: Record<string, string> = {
-  "The Classic": "from-indigo-500/10 to-purple-500/10 border-indigo-500/20",
-  "The Problem First": "from-rose-500/10 to-orange-500/10 border-rose-500/20",
-  "The Traction First": "from-emerald-500/10 to-teal-500/10 border-emerald-500/20",
+const EASE = [0.22, 1, 0.36, 1] as const
+
+const listVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+}
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+}
+
+const STYLE_ACCENTS: Record<string, string> = {
+  "The Classic": "text-brand-cyan",
+  "The Problem First": "text-brand-fuchsia",
+  "The Traction First": "text-success",
 }
 
 const STYLE_BADGES: Record<string, string> = {
-  "A": "bg-indigo-500/10 text-indigo-600 border-indigo-500/30",
-  "B": "bg-rose-500/10 text-rose-600 border-rose-500/30",
-  "C": "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+  "A": "bg-brand/15 text-brand-cyan border-brand/25",
+  "B": "bg-brand-fuchsia/10 text-brand-fuchsia border-brand-fuchsia/25",
+  "C": "bg-success/10 text-success border-success/25",
 }
 
 export default function InvestorPage() {
@@ -114,16 +124,21 @@ export default function InvestorPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[60vh] items-center justify-center space-y-4">
+      <div className="flex flex-col h-[60vh] items-center justify-center space-y-6 animate-fade-in">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
-          <div className="relative h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-            <Briefcase className="h-6 w-6 text-primary animate-pulse" />
+          <div className="absolute inset-0 rounded-2xl bg-brand/20 blur-xl animate-pulse-glow" />
+          <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/25 flex items-center justify-center">
+            <Briefcase className="h-6 w-6 text-brand-cyan" />
           </div>
         </div>
         <div className="text-center">
           <p className="font-semibold text-foreground">Generating Investor Pitches</p>
           <p className="text-sm text-muted-foreground mt-1">Crafting 3 pitch formulas from your analysis data...</p>
+        </div>
+        <div className="w-full max-w-2xl space-y-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="skeleton h-24 rounded-2xl" style={{ animationDelay: `${i * 150}ms` }} />
+          ))}
         </div>
       </div>
     )
@@ -131,35 +146,39 @@ export default function InvestorPage() {
 
   if (error || pitches.length === 0) {
     return (
-      <div className="text-center py-20 flex flex-col items-center">
-        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-2xl font-bold">Pitch Generation Failed</h2>
-        <p className="text-muted-foreground mt-2">{error || "Could not generate investor pitches."}</p>
+      <div className="max-w-lg mx-auto py-10">
+        <div className="card-premium rounded-2xl py-16 px-6 text-center">
+          <div className="w-12 h-12 mx-auto rounded-xl bg-danger/10 border border-danger/25 flex items-center justify-center mb-5">
+            <AlertCircle className="h-6 w-6 text-danger" />
+          </div>
+          <h2 className="text-xl font-semibold tracking-tight">Pitch Generation Failed</h2>
+          <p className="text-sm text-muted-foreground mt-2">{error || "Could not generate investor pitches."}</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-5xl mx-auto animate-fade-up">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
-              <Briefcase className="h-3 w-3 mr-1" />
+          <div className="flex items-center gap-3 mb-3">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[11px] font-mono uppercase tracking-[0.18em] text-brand-cyan">
+              <Briefcase className="h-3 w-3" />
               Investor Ready
-            </Badge>
+            </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Investor Pitches</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-gradient-subtle">Investor Pitches</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             3 proven pitch formulas tailored to your idea. Copy, customize, and pitch.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
           <Button
             onClick={() => handleDownload('pdf')}
-            className="gap-2"
+            className="gap-2 rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/[0.07] press"
             variant="outline"
             disabled={downloadingPDF}
           >
@@ -168,7 +187,7 @@ export default function InvestorPage() {
           </Button>
           <Button
             onClick={() => handleDownload('ppt')}
-            className="gap-2"
+            className="gap-2 rounded-xl bg-primary hover:bg-primary/90 glow-primary shimmer press"
             variant="default"
             disabled={downloadingPPT}
           >
@@ -179,33 +198,35 @@ export default function InvestorPage() {
       </div>
 
       {/* Pitch Cards */}
-      <div className="grid gap-6">
+      <motion.div variants={listVariants} initial="hidden" animate="show" className="grid gap-6">
         {pitches.map((pitch, index) => {
           const pitchText = pitch.pitch || pitch.full_pitch || ""
           const format = pitch.format || String.fromCharCode(65 + index)  // A, B, C
           const style = pitch.style || "Standard Pitch"
-          const bgClass = STYLE_COLORS[style] || "from-muted/50 to-muted/30 border-border"
-          const badgeClass = STYLE_BADGES[format] || "bg-muted text-foreground"
+          const accentClass = STYLE_ACCENTS[style] || "text-brand-cyan"
+          const badgeClass = STYLE_BADGES[format] || "bg-white/[0.05] text-muted-foreground border-white/10"
 
           return (
-            <Card key={index} className={cn("overflow-hidden border bg-gradient-to-br", bgClass)}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={cn("text-xs font-bold", badgeClass)}>
+            <motion.div key={index} variants={itemVariants} className="card-premium card-premium-hover rounded-2xl overflow-hidden">
+              <div className="p-6 pb-4">
+                <div className="flex justify-between items-start gap-3">
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={cn("text-xs font-bold px-2.5 py-0.5 rounded-full border font-mono", badgeClass)}>
                         Formula {format}
-                      </Badge>
+                      </span>
                       <span className="text-xs text-muted-foreground font-medium">{style}</span>
                     </div>
-                    <CardTitle className="text-lg">{style}</CardTitle>
+                    <h3 className={cn("text-lg font-semibold tracking-tight", accentClass)}>{style}</h3>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     className={cn(
-                      "gap-2 transition-all",
-                      copiedIndex === index ? "text-green-500 border-green-500 bg-green-500/10" : ""
+                      "gap-2 rounded-xl transition-all shrink-0 press",
+                      copiedIndex === index
+                        ? "text-success border-success/40 bg-success/10 hover:bg-success/10 hover:text-success"
+                        : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
                     )}
                     onClick={() => copyToClipboard(pitchText, index)}
                   >
@@ -216,12 +237,12 @@ export default function InvestorPage() {
                     )}
                   </Button>
                 </div>
-              </CardHeader>
+              </div>
 
-              <CardContent className="space-y-5">
+              <div className="px-6 pb-6 space-y-5">
                 {/* The Pitch */}
-                <div className="bg-card/80 backdrop-blur-sm rounded-xl p-5 border border-border/50">
-                  <p className="text-foreground leading-relaxed text-[15px]">
+                <div className="glass rounded-xl p-5">
+                  <p className="text-foreground/90 leading-relaxed text-[15px]">
                     &ldquo;{pitchText}&rdquo;
                   </p>
                 </div>
@@ -229,19 +250,19 @@ export default function InvestorPage() {
                 {/* Hook + Key Stat */}
                 <div className="grid md:grid-cols-2 gap-4">
                   {pitch.hook && (
-                    <div className="space-y-1">
-                      <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                        <Sparkles className="h-3 w-3" /> Opening Hook
+                    <div className="space-y-1.5">
+                      <h4 className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground/70 flex items-center gap-1.5">
+                        <Sparkles className="h-3 w-3 text-brand-cyan" /> Opening Hook
                       </h4>
-                      <p className="text-sm text-foreground italic bg-card/50 p-3 rounded-lg border border-border/30">
+                      <p className="text-sm text-foreground/90 accent-serif p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                         &ldquo;{pitch.hook}&rdquo;
                       </p>
                     </div>
                   )}
                   {pitch.key_stat && (
-                    <div className="space-y-1">
-                      <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Key Statistic</h4>
-                      <p className="text-sm text-foreground font-medium bg-card/50 p-3 rounded-lg border border-border/30">
+                    <div className="space-y-1.5">
+                      <h4 className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">Key Statistic</h4>
+                      <p className="text-sm text-foreground font-medium tabular-nums p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                         {pitch.key_stat}
                       </p>
                     </div>
@@ -253,23 +274,23 @@ export default function InvestorPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     {pitch.problem && (
                       <div>
-                        <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-1.5">The Problem</h4>
-                        <p className="text-sm text-foreground bg-card/50 p-3 rounded-lg">{pitch.problem}</p>
+                        <h4 className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground/70 mb-1.5">The Problem</h4>
+                        <p className="text-sm text-foreground/90 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">{pitch.problem}</p>
                       </div>
                     )}
                     {pitch.solution && (
                       <div>
-                        <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-1.5">The Solution</h4>
-                        <p className="text-sm text-foreground bg-primary/5 p-3 rounded-lg border border-primary/10">{pitch.solution}</p>
+                        <h4 className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground/70 mb-1.5">The Solution</h4>
+                        <p className="text-sm text-foreground/90 p-3.5 rounded-xl bg-brand/[0.06] border border-brand/20">{pitch.solution}</p>
                       </div>
                     )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           )
         })}
-      </div>
+      </motion.div>
     </div>
   )
 }

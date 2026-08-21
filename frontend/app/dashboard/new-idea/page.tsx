@@ -24,6 +24,7 @@ import {
   X,
   StopCircle,
   FileText,
+  PenLine,
   Image as ImageIcon
 } from "lucide-react"
 import { apiFetch } from "@/lib/api"
@@ -31,12 +32,19 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { StageTracker } from "@/components/stage-tracker"
 
+/** Purely presentational: shows where the founder is in the three-step flow. */
+const SEED_STEPS = [
+  { icon: PenLine, label: "Describe" },
+  { icon: Layers, label: "Refine" },
+  { icon: Rocket, label: "Analyze" },
+]
+
 const LAYER_DEFS = [
-  { id: "problem",  label: "Problem",       color: "from-red-500 to-orange-500" },
-  { id: "solution", label: "Solution",      color: "from-orange-500 to-amber-500" },
-  { id: "audience", label: "Audience",      color: "from-amber-500 to-yellow-500" },
-  { id: "market",   label: "Market",        color: "from-yellow-500 to-green-500" },
-  { id: "monetize", label: "Monetization",  color: "from-green-500 to-emerald-500" },
+  { id: "problem",  label: "Problem",       color: "from-brand-fuchsia to-brand-violet" },
+  { id: "solution", label: "Solution",      color: "from-brand-violet to-brand" },
+  { id: "audience", label: "Audience",      color: "from-brand to-brand-cyan" },
+  { id: "market",   label: "Market",        color: "from-brand-cyan to-brand" },
+  { id: "monetize", label: "Monetization",  color: "from-brand to-brand-violet" },
 ]
 
 interface Message {
@@ -79,10 +87,10 @@ export default function NewIdeaPage() {
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioChunks, setAudioChunks] = useState<Blob[]>([])
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const timerRef = useRef<NodeJS.Timeout>()
-  const audioContextRef = useRef<AudioContext>()
-  const analyserRef = useRef<AnalyserNode>()
-  const animationRef = useRef<number>()
+  const timerRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const audioContextRef = useRef<AudioContext | undefined>(undefined)
+  const analyserRef = useRef<AnalyserNode | undefined>(undefined)
+  const animationRef = useRef<number | undefined>(undefined)
 
   const [filePreview, setFilePreview] = useState<{
     name: string;
@@ -376,38 +384,87 @@ export default function NewIdeaPage() {
   // ─────────────────────────────────────────────────────────────────────────────
   if (phase === "seed") {
     return (
-      <div className="max-w-3xl mx-auto py-8 px-4">
+      <div className="relative max-w-3xl mx-auto py-8 sm:py-12 px-4 animate-fade-up">
+        {/* Soft overhead light */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-16 h-64 w-[560px] max-w-[120%] rounded-full bg-brand/[0.13] blur-[110px]"
+        />
+
+        <header className="relative text-center mb-9 sm:mb-11">
+          <p className="eyebrow mb-4">New idea</p>
+          <h1 className="text-[1.875rem] sm:text-[2.75rem] font-semibold tracking-[-0.035em] leading-[1.08] text-gradient-subtle">
+            Describe your <span className="accent-serif text-gradient">idea</span>
+          </h1>
+          <p className="text-[15px] text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
+            Our AI refines it layer by layer, then runs a full 8-stage analysis.
+          </p>
+
+          {/* Three-step orientation */}
+          <div className="mt-8 flex items-center justify-center gap-2 sm:gap-4">
+            {SEED_STEPS.map((step, i) => (
+              <div key={step.label} className="flex items-center gap-2 sm:gap-4">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "h-7 w-7 rounded-lg border flex items-center justify-center shrink-0",
+                      i === 0
+                        ? "bg-brand/15 border-brand/30 text-brand-cyan shadow-[inset_0_1px_0_oklch(1_0_0_/_0.12)]"
+                        : "bg-white/[0.03] border-white/[0.07] text-muted-foreground/45"
+                    )}
+                  >
+                    <step.icon className="h-3.5 w-3.5" />
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[10px] font-mono font-medium uppercase tracking-[0.18em] whitespace-nowrap",
+                      i === 0 ? "text-foreground inline" : "text-muted-foreground/45 hidden sm:inline"
+                    )}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+                {i < SEED_STEPS.length - 1 && (
+                  <span
+                    aria-hidden
+                    className="h-px w-5 sm:w-10 bg-gradient-to-r from-white/[0.16] to-white/[0.04]"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </header>
 
         {filePreview && (
-          <Card className="mb-6 border-primary/20">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-primary" />
+          <Card className="relative card-premium rounded-2xl border-none shadow-none mb-5 animate-fade-in">
+            <CardContent className="p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shrink-0 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.09)]">
+                  <FileText className="h-5 w-5 text-brand-cyan" />
                 </div>
-                <div>
-                  <p className="font-medium truncate max-w-xs">{filePreview.name}</p>
-                  <p className="text-xs text-muted-foreground">{filePreview.type} • {filePreview.size}</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{filePreview.name}</p>
+                  <p className="text-xs font-mono text-muted-foreground/70 mt-0.5">{filePreview.type} · {filePreview.size}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setFilePreview(null)}>
+              <Button variant="ghost" size="icon" className="rounded-lg shrink-0 text-muted-foreground hover:text-foreground hover:bg-white/[0.06]" onClick={() => setFilePreview(null)}>
                 <X className="h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
         )}
 
-        <Card className="border-none overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br from-white/70 to-primary/10 dark:from-card dark:to-primary/10">
-          <CardContent className="p-6 sm:p-10 space-y-8">
+        <div className="relative rounded-2xl border-gradient shadow-[0_40px_100px_-40px_oklch(0.585_0.222_277/0.45)]">
+          <div className="relative rounded-2xl p-6 sm:p-10 space-y-8 bg-[linear-gradient(to_bottom,oklch(1_0_0_/_0.045),transparent_38%)]">
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="title" className="text-sm font-bold uppercase text-muted-foreground">Startup Name / Working Title</Label>
-                <span className="text-xs text-muted-foreground">{formData.title.length}/60</span>
+              <div className="flex justify-between items-center gap-3">
+                <Label htmlFor="title" className="text-[10px] font-mono font-medium uppercase tracking-[0.2em] text-muted-foreground/70">Startup Name / Working Title</Label>
+                <span className="text-[11px] font-mono tabular-nums text-muted-foreground/50">{formData.title.length}/60</span>
               </div>
               <Input
                 id="title"
                 placeholder="e.g. AI Coffee Roaster"
-                className="h-14 rounded-xl text-lg border-2"
+                className="h-14 rounded-xl text-lg bg-white/[0.03] border-white/10 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.04)] focus-visible:border-brand/40 transition-colors"
                 value={formData.title}
                 onChange={handleInputChange}
                 maxLength={60}
@@ -415,39 +472,39 @@ export default function NewIdeaPage() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="description" className="text-sm font-bold uppercase text-muted-foreground">What's your idea?</Label>
-                <span className="text-xs text-muted-foreground">{formData.description.length}/1000</span>
+              <div className="flex justify-between items-center gap-3">
+                <Label htmlFor="description" className="text-[10px] font-mono font-medium uppercase tracking-[0.2em] text-muted-foreground/70">What&apos;s your idea?</Label>
+                <span className="text-[11px] font-mono tabular-nums text-muted-foreground/50">{formData.description.length}/1000</span>
               </div>
               <Textarea
                 id="description"
-                placeholder="Describe what you want to build..."
-                className="min-h-[140px] rounded-xl text-lg border-2 resize-none"
+                placeholder="Describe what you want to build — the problem, who it's for, and why now. A few sentences is plenty."
+                className="min-h-[180px] rounded-xl text-lg leading-relaxed bg-white/[0.03] border-white/10 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.04)] focus-visible:border-brand/40 transition-colors resize-none"
                 value={formData.description}
                 onChange={handleInputChange}
                 maxLength={1000}
               />
             </div>
 
-            <div className="space-y-6 pt-4">
+            <div className="space-y-6 pt-2">
               <Button
                 onClick={initiateLayersEngine}
                 disabled={isLoading || (!formData.title && !formData.description)}
-                className="w-full rounded-xl h-14 font-semibold text-lg bg-gradient-to-r from-primary to-primary/80 hover:scale-[1.02] transition-transform text-white shadow-xl"
+                className="w-full rounded-xl h-14 font-semibold text-base gap-2 bg-primary hover:bg-primary/90 text-primary-foreground glow-primary shimmer press disabled:opacity-45"
               >
                 {isLoading ? (
-                  <><Loader2 className="h-5 w-5 animate-spin mr-2" /> Initializing...</>
+                  <><Loader2 className="h-5 w-5 animate-spin" /> Initializing...</>
                 ) : (
-                  <>Start Interactive Refinement <Layers className="h-5 w-5 ml-2" /></>
+                  <><Sparkles className="h-5 w-5" /> Start Interactive Refinement</>
                 )}
               </Button>
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
+                  <span className="w-full divider-glow" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or provide more context via</span>
+                <div className="relative flex justify-center">
+                  <span className="bg-card px-3 text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">Or provide more context via</span>
                 </div>
               </div>
 
@@ -455,18 +512,21 @@ export default function NewIdeaPage() {
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button
                   onClick={isRecording ? stopRecording : startRecording}
-                  variant={isRecording ? "destructive" : "secondary"}
-                  className="rounded-xl h-11 gap-2 shadow-sm relative overflow-hidden flex-1 min-w-[140px]"
+                  variant={isRecording ? "destructive" : "outline"}
+                  className={cn(
+                    "rounded-xl h-11 gap-2 relative overflow-hidden flex-1 min-w-[140px] press",
+                    !isRecording && "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
+                  )}
                   disabled={isUploading}
                 >
                   {isRecording ? (
                     <>
                       <StopCircle className="h-4 w-4 animate-pulse" />
-                      <span>{formatTime(recordingTime)}</span>
+                      <span className="font-mono tabular-nums">{formatTime(recordingTime)}</span>
                     </>
                   ) : (
                     <>
-                      <Mic className="h-4 w-4" /> Voice Input
+                      <Mic className="h-4 w-4 text-brand-cyan" /> Voice Input
                     </>
                   )}
                 </Button>
@@ -483,24 +543,24 @@ export default function NewIdeaPage() {
                   <Label
                     htmlFor="file-upload"
                     className={cn(
-                      "flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 cursor-pointer shadow-sm font-medium transition-colors w-full",
+                      "flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] text-foreground cursor-pointer text-sm font-medium transition-colors w-full press",
                       isUploading && "opacity-50 cursor-not-allowed"
                     )}
                   >
-                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 text-brand-cyan" />}
                     Upload File/PPT/PDF
                   </Label>
                 </div>
-                
+
                 {(formData.title || formData.description) && (
-                  <Button variant="outline" onClick={handleClearDraft} className="rounded-xl h-11 gap-2 flex-1 min-w-[140px]">
+                  <Button variant="ghost" onClick={handleClearDraft} className="rounded-xl h-11 gap-2 flex-1 min-w-[140px] text-muted-foreground hover:text-foreground hover:bg-white/[0.06]">
                     <X className="h-4 w-4" /> Clear Draft
                   </Button>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     )
   }
@@ -525,9 +585,16 @@ export default function NewIdeaPage() {
             }}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-foreground" />
-            <p className="text-sm text-muted-foreground">Submitting your idea…</p>
+          <div className="relative rounded-2xl border-gradient shadow-[0_30px_80px_-40px_oklch(0.585_0.222_277/0.4)]">
+            <div className="glass-strong rounded-2xl flex flex-col items-center justify-center py-20 gap-4 px-6 text-center">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shadow-[inset_0_1px_0_oklch(1_0_0_/_0.10)]">
+                <Loader2 className="h-5 w-5 animate-spin text-brand-cyan" />
+              </div>
+              <p className="text-sm text-muted-foreground">Submitting your idea…</p>
+              <div className="w-40 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-brand-cyan via-brand to-brand-violet animate-beam" />
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -539,67 +606,74 @@ export default function NewIdeaPage() {
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-4xl mx-auto py-4 sm:py-6 px-4 flex flex-col h-[calc(100vh-120px)] sm:h-[calc(100vh-80px)]">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md shrink-0">
+          <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-brand to-brand-violet flex items-center justify-center shadow-[0_10px_28px_-8px_oklch(0.585_0.222_277/0.7),inset_0_1px_0_oklch(1_0_0_/_0.2)] shrink-0">
             <Layers className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-base sm:text-lg font-bold truncate">Refining Your Idea</h1>
-            <p className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-xs">{formData.title || "Startup Concept"}</p>
+            <p className="text-[10px] font-mono font-medium uppercase tracking-[0.2em] text-brand-cyan mb-1">Step 2 · Refine</p>
+            <h1 className="text-base sm:text-lg font-semibold tracking-tight truncate">
+              {formData.title || "Startup Concept"}
+            </h1>
           </div>
         </div>
         {isReady && (
           <Button
             onClick={handleFinalize}
             disabled={isLoading}
-            className="rounded-xl gap-2 font-semibold bg-gradient-to-r from-green-600 to-emerald-600 sm:hover:scale-105 text-white shadow-lg transition-transform sm:animate-bounce w-full sm:w-auto"
+            className="rounded-xl gap-2 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground glow-primary shimmer press w-full sm:w-auto"
           >
             <Rocket className="h-4 w-4" /> Start Final Analysis
           </Button>
         )}
       </div>
 
-      <div className="flex items-center gap-1.5 mb-4">
-        {LAYER_DEFS.map((l) => {
-          const isCompleted = completedLayers.includes(l.id)
-          const isActive = activeLayer === l.id
-          return (
-            <div key={l.id} className="flex-1 flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  "h-2 w-full rounded-full transition-all duration-500",
-                  isCompleted ? `bg-gradient-to-r ${l.color}` : isActive ? `bg-gradient-to-r ${l.color} opacity-50 animate-pulse` : "bg-muted"
-                )}
-              />
-              <div className="flex items-center gap-1">
-                {isCompleted ? <CheckCircle2 className="h-3 w-3 text-green-500" /> : isActive ? <Circle className="h-3 w-3 text-primary animate-pulse" /> : <Circle className="h-3 w-3 text-muted-foreground/40" />}
-                <span className={cn("text-[9px] sm:text-[10px] font-medium uppercase tracking-wider hidden xs:inline", isCompleted ? "text-green-600" : isActive ? "text-primary font-bold" : "text-muted-foreground/60")}>
-                  {l.label}
-                </span>
+      <div className="card-premium rounded-2xl p-4 sm:p-5 mb-5">
+        <div className="flex items-center gap-1.5">
+          {LAYER_DEFS.map((l) => {
+            const isCompleted = completedLayers.includes(l.id)
+            const isActive = activeLayer === l.id
+            return (
+              <div key={l.id} className="flex-1 flex flex-col items-center gap-1.5">
+                <div
+                  className={cn(
+                    "h-1.5 w-full rounded-full transition-all duration-500",
+                    isCompleted ? `bg-gradient-to-r ${l.color}` : isActive ? `bg-gradient-to-r ${l.color} opacity-50 animate-pulse` : "bg-white/[0.06]"
+                  )}
+                />
+                <div className="flex items-center gap-1">
+                  {isCompleted ? <CheckCircle2 className="h-3 w-3 text-success" /> : isActive ? <Circle className="h-3 w-3 text-brand animate-pulse" /> : <Circle className="h-3 w-3 text-muted-foreground/40" />}
+                  <span className={cn("text-[9px] sm:text-[10px] font-mono font-medium uppercase tracking-[0.12em] hidden xs:inline", isCompleted ? "text-success" : isActive ? "text-brand-cyan font-semibold" : "text-muted-foreground/60")}>
+                    {l.label}
+                  </span>
+                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
 
-      <div className="flex items-center gap-3 mb-4">
-        <Progress value={progress} className="flex-1 h-1.5" />
-        <span className="text-xs font-bold text-primary">{Math.round(progress)}%</span>
+        <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/[0.06]">
+          <span className="text-[10px] font-mono font-medium uppercase tracking-[0.2em] text-muted-foreground/60 shrink-0 hidden sm:inline">
+            Progress
+          </span>
+          <Progress value={progress} className="flex-1 h-1.5" />
+          <span className="text-sm font-semibold tabular-nums tracking-tight text-brand-cyan shrink-0">{Math.round(progress)}%</span>
+        </div>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-2 mb-4 scroll-smooth">
         {messages.map((msg, i) => (
           <div key={i} className={cn("flex gap-3", msg.role === "user" ? "justify-end" : "justify-start")}>
             <div className={cn("flex items-start gap-2.5 max-w-[80%]", msg.role === "user" ? "flex-row-reverse" : "flex-row")}>
-              <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0 shadow-sm", msg.role === "user" ? "bg-primary text-white" : "bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 text-slate-600 dark:text-slate-300")}>
+              <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.12)]", msg.role === "user" ? "bg-gradient-to-br from-brand to-brand-violet text-white" : "bg-white/[0.06] border border-white/[0.08] text-brand-cyan")}>
                 {msg.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
               </div>
               <div>
                 {msg.role === "ai" && msg.layerLabel && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70 mb-1 block">{msg.layerLabel} Layer</span>
+                  <span className="text-[10px] font-mono font-medium uppercase tracking-[0.18em] text-brand-cyan mb-1.5 block">{msg.layerLabel} Layer</span>
                 )}
-                <div className={cn("px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm", msg.role === "user" ? "bg-primary text-white rounded-tr-none" : "bg-slate-100 dark:bg-slate-800 text-foreground rounded-tl-none")}>
+                <div className={cn("px-4 py-3 rounded-2xl text-sm leading-relaxed text-foreground shadow-[inset_0_1px_0_oklch(1_0_0_/_0.05),0_8px_24px_-16px_oklch(0_0_0_/_0.8)]", msg.role === "user" ? "bg-brand/15 border border-brand/25 rounded-tr-md" : "bg-white/[0.045] border border-white/[0.07] rounded-tl-md")}>
                   {msg.content}
                 </div>
               </div>
@@ -608,17 +682,17 @@ export default function NewIdeaPage() {
         ))}
 
         {isReady && !isLoading && (
-          <div className="flex flex-col items-center py-8 space-y-4 animate-in fade-in zoom-in duration-500">
-            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+          <div className="flex flex-col items-center py-8 space-y-4 animate-fade-up">
+            <div className="h-12 w-12 rounded-full bg-success/10 border border-success/25 flex items-center justify-center text-success shadow-[0_0_24px_oklch(0.72_0.17_160/0.3)]">
               <CheckCircle2 className="h-6 w-6" />
             </div>
             <div className="text-center">
-              <h3 className="font-bold text-lg text-foreground">Refinement Complete!</h3>
+              <h3 className="font-semibold text-lg tracking-tight text-foreground">Refinement Complete!</h3>
               <p className="text-sm text-muted-foreground">I have everything needed for a deep analysis.</p>
             </div>
             <Button
               onClick={handleFinalize}
-              className="rounded-xl px-8 h-12 gap-2 font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:scale-105 text-white shadow-xl transition-transform"
+              className="rounded-xl px-8 h-12 gap-2 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground glow-primary shimmer press"
             >
               <Rocket className="h-5 w-5" /> Start Final Analysis
             </Button>
@@ -628,24 +702,24 @@ export default function NewIdeaPage() {
         {isLoading && (
           <div className="flex gap-3 justify-start">
             <div className="flex items-start gap-2.5 max-w-[80%]">
-              <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 shadow-sm"><Bot className="h-4 w-4" /></div>
-              <div className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="h-4 w-4 animate-spin" /><span className="animate-pulse">Thinking...</span></div>
+              <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 bg-white/[0.06] border border-white/[0.08] text-brand-cyan"><Bot className="h-4 w-4" /></div>
+              <div className="bg-white/[0.04] border border-white/[0.06] px-4 py-3 rounded-2xl rounded-tl-md flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="h-4 w-4 animate-spin text-brand" /><span className="animate-pulse">Thinking...</span></div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center rounded-2xl glass-strong p-2 shadow-[0_20px_50px_-30px_oklch(0_0_0_/_0.9)]">
         <Input
           placeholder={isReady ? "Refinement complete" : "Type your answer..."}
-          className="h-12 rounded-xl text-base border-2 focus:border-primary transition-all"
+          className="h-12 rounded-xl text-base bg-white/[0.03] border-white/[0.07] shadow-[inset_0_1px_0_oklch(1_0_0_/_0.04)] focus-visible:border-brand/40 transition-colors"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !isLoading && handleSendAnswer()}
           disabled={isLoading || isReady}
           autoFocus
         />
-        <Button onClick={handleSendAnswer} disabled={isLoading || !input.trim() || isReady} size="icon" className="h-12 w-12 rounded-xl shrink-0 bg-primary shadow-md">
+        <Button onClick={handleSendAnswer} disabled={isLoading || !input.trim() || isReady} size="icon" className="h-12 w-12 rounded-xl shrink-0 bg-primary hover:bg-primary/90 glow-primary press disabled:opacity-45">
           <Send className="h-5 w-5" />
         </Button>
       </div>

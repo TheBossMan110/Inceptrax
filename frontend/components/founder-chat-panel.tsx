@@ -112,7 +112,7 @@ export function FounderChatPanel({
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className="flex-1 flex flex-col gap-4 mt-4 overflow-hidden bg-slate-50/50 rounded-xl border border-slate-100 p-2">
+                <div className="flex-1 flex flex-col gap-4 mt-4 overflow-hidden bg-white/[0.02] rounded-xl border border-white/[0.06] p-2">
                     <ScrollArea className="flex-1 pr-4 pl-2">
                         <div className="space-y-4 flex flex-col min-h-full pb-4 pt-2">
                             {isFetchingInitial ? (
@@ -139,8 +139,8 @@ export function FounderChatPanel({
                                                 <div
                                                     className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
                                                         isMe
-                                                            ? "bg-indigo-600 text-white"
-                                                            : "bg-white text-slate-700 border border-slate-200"
+                                                            ? "bg-gradient-to-br from-brand to-brand-violet text-white"
+                                                            : "bg-white/[0.06] text-foreground/80 border border-white/[0.08]"
                                                     }`}
                                                 >
                                                     <UserIcon className="h-4 w-4" />
@@ -148,12 +148,12 @@ export function FounderChatPanel({
                                                 <div
                                                     className={`p-3 rounded-2xl text-sm shadow-sm ${
                                                         isMe
-                                                            ? "bg-indigo-600 text-white rounded-tr-sm"
-                                                            : "bg-white text-slate-800 border border-slate-100 rounded-tl-sm"
+                                                            ? "bg-brand/90 text-white rounded-tr-sm shadow-[0_4px_16px_-4px_oklch(0.585_0.222_277/0.4)]"
+                                                            : "bg-white/[0.05] text-foreground/90 border border-white/[0.06] rounded-tl-sm"
                                                     }`}
                                                 >
                                                     {msg.content}
-                                                    <div className={`text-[10px] mt-1 ${isMe ? 'text-indigo-200' : 'text-slate-400'}`}>
+                                                    <div className={`text-[10px] mt-1 ${isMe ? 'text-white/60' : 'text-muted-foreground/70'}`}>
                                                         {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                     </div>
                                                 </div>

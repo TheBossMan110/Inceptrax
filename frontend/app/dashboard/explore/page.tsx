@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,14 +35,24 @@ const SORT_OPTIONS = [
 ]
 
 function scoreColor(score: number) {
-  if (score >= 75) return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950/30"
-  if (score >= 50) return "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30"
-  return "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950/30"
+  if (score >= 75) return "bg-success/10 text-success border border-success/25"
+  if (score >= 50) return "bg-warning/10 text-warning border border-warning/25"
+  return "bg-danger/10 text-danger border border-danger/25"
+}
+
+const gridVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const } },
 }
 
 function IdeaSkeleton() {
   return (
-    <div className="rounded-xl border bg-card p-5 space-y-4">
+    <div className="card-premium rounded-2xl p-5 space-y-4">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 rounded-full" />
@@ -108,7 +119,7 @@ export default function ExplorePage() {
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Explore Ideas</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Explore Ideas</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Discover validated startup ideas shared by other founders
         </p>
@@ -120,20 +131,20 @@ export default function ExplorePage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search ideas by name, industry, or description…"
-            className="pl-9 h-10"
+            className="pl-9 h-10 rounded-xl bg-white/[0.03] border-white/[0.08] focus-visible:border-brand/40"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-1 p-1 bg-muted/50 rounded-lg border h-10 items-center shrink-0">
+        <div className="flex gap-1 p-1 bg-white/[0.03] rounded-xl border border-white/[0.08] h-10 items-center shrink-0">
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => { setSort(opt.value); setCurrentPage(1) }}
               className={cn(
-                "px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 whitespace-nowrap",
+                "px-3 py-1 text-xs font-medium rounded-lg transition-all duration-200 whitespace-nowrap press",
                 sort === opt.value
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-brand/15 text-foreground shadow-[inset_0_1px_0_oklch(1_0_0_/_0.06)]"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -143,7 +154,7 @@ export default function ExplorePage() {
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-muted-foreground/70">
         {isLoading ? "Loading…" : `${totalCount} public idea${totalCount !== 1 ? "s" : ""} found`}
       </p>
 
@@ -153,13 +164,19 @@ export default function ExplorePage() {
           {Array.from({ length: 6 }).map((_, i) => <IdeaSkeleton key={i} />)}
         </div>
       ) : filtered.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          variants={gridVariants}
+          initial="hidden"
+          animate="show"
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+        >
           {filtered.map((idea) => (
-            <Card key={idea.id} className="group overflow-hidden hover:shadow-md hover:-translate-y-px transition-all duration-200 border">
-              <CardContent className="p-5 flex flex-col gap-4">
+            <motion.div key={idea.id} variants={cardVariants} className="flex">
+            <Card className="card-premium card-premium-hover rounded-2xl border-none shadow-none group overflow-hidden w-full">
+              <CardContent className="p-5 flex flex-col gap-4 h-full">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="h-9 w-9 rounded-full bg-foreground text-background flex items-center justify-center text-sm font-semibold shrink-0">
+                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-brand to-brand-violet text-white flex items-center justify-center text-sm font-semibold shrink-0">
                       {idea.founder_initial}
                     </div>
                     <div>
@@ -170,32 +187,32 @@ export default function ExplorePage() {
                     </div>
                   </div>
                   {idea.overall_score > 0 && (
-                    <span className={cn("text-sm font-bold tabular-nums px-2.5 py-1 rounded-full", scoreColor(idea.overall_score))}>
+                    <span className={cn("text-xs font-semibold tabular-nums px-2.5 py-0.5 rounded-full", scoreColor(idea.overall_score))}>
                       {idea.overall_score}
                     </span>
                   )}
                 </div>
                 <div className="space-y-1.5 flex-1">
-                  <h3 className="font-semibold text-base leading-snug line-clamp-2 group-hover:text-primary transition-colors">{idea.title}</h3>
+                  <h3 className="font-semibold text-base leading-snug line-clamp-2 group-hover:text-brand-cyan transition-colors">{idea.title}</h3>
                   <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{idea.description}</p>
                 </div>
                 <div className="flex items-center justify-between gap-2 pt-1">
                   <div className="flex gap-1.5 flex-wrap">
                     {idea.industry && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{idea.industry}</span>
+                      <span className="text-[10px] font-mono font-medium uppercase tracking-[0.08em] px-2 py-0.5 rounded-full bg-brand/10 text-brand-cyan border border-brand/20">{idea.industry}</span>
                     )}
                     {idea.public_views > 0 && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-1">
+                      <span className="text-[10px] font-medium tabular-nums px-2 py-0.5 rounded-full bg-white/[0.04] text-muted-foreground border border-white/[0.08] flex items-center gap-1">
                         <Eye className="h-3 w-3" /> {idea.public_views}
                       </span>
                     )}
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 gap-2 text-xs" asChild>
+                  <Button variant="outline" size="sm" className="flex-1 gap-2 text-xs rounded-xl border-brand/25 text-brand-cyan hover:bg-brand/10 hover:text-brand-cyan bg-transparent press" asChild>
                     <Link href={`/share/${idea.share_token}`}>View Analysis <ArrowRight className="h-3.5 w-3.5" /></Link>
                   </Button>
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs" asChild>
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/[0.06]" asChild>
                     <Link href={`/dashboard/chat?with=${idea.founder_id}`}>
                       <MessageSquare className="h-3.5 w-3.5" /> Message
                     </Link>
@@ -203,21 +220,22 @@ export default function ExplorePage() {
                 </div>
               </CardContent>
             </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="h-14 w-14 rounded-xl bg-muted flex items-center justify-center">
-            <Globe className="h-7 w-7 text-muted-foreground" />
+        <div className="card-premium rounded-2xl flex flex-col items-center justify-center py-16 gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center">
+            <Globe className="h-5 w-5 text-brand-cyan" />
           </div>
           <div className="text-center">
-            <p className="font-medium text-sm">No public ideas yet</p>
+            <p className="font-semibold text-sm">No public ideas yet</p>
             <p className="text-xs text-muted-foreground mt-1">
               {searchQuery ? "Try a different search term" : "Be the first to make your idea public!"}
             </p>
           </div>
           {searchQuery && (
-            <Button variant="outline" size="sm" onClick={() => setSearchQuery("")}>Clear Search</Button>
+            <Button variant="outline" size="sm" className="rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/[0.07]" onClick={() => setSearchQuery("")}>Clear Search</Button>
           )}
         </div>
       )}
@@ -225,11 +243,11 @@ export default function ExplorePage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-4">
-          <Button variant="outline" size="icon-sm" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
+          <Button variant="outline" size="icon-sm" className="rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/[0.07] press" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm text-muted-foreground px-3 tabular-nums">Page {currentPage} of {totalPages}</span>
-          <Button variant="outline" size="icon-sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
+          <Button variant="outline" size="icon-sm" className="rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/[0.07] press" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

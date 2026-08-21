@@ -152,3 +152,105 @@ async def restore_database(file: UploadFile = File(...), current_user: dict = De
         return {"message": "Database restored successfully from JSON backup"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── Credit Management (Admin) ────────────────────────────────────────────────
+
+class CreditGrantRequest(BaseModel):
+    user_id: int
+    amount: int
+    reason: str = "manual_admin"
+
+
+class CreditDeductRequest(BaseModel):
+    user_id: int
+    amount: int
+    reason: str = "manual_admin_deduct"
+
+
+class TierUpdateRequest(BaseModel):
+    user_id: int
+    tier: str  # "free", "pro", "team"
+
+
+@router.post("/credits/grant")
+async def admin_grant_credits(body: CreditGrantRequest, current_user: dict = Depends(get_admin_user)):
+    """Admin: grant credits to a user."""
+    from app_fastapi import get_db
+    from app_fastapi.services.credit_service import CreditService
+    db = get_db()
+
+    if body.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+
+    result = await CreditService.grant(db, body.user_id, body.amount, body.reason)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
+
+    return {"message": f"Granted {body.amount} credits to user #{body.user_id}", **result}
+
+
+@router.post("/credits/deduct")
+async def admin_deduct_credits(body: CreditDeductRequest, current_user: dict = Depends(get_admin_user)):
+    """Admin: deduct credits from a user."""
+    from app_fastapi import get_db
+    from app_fastapi.services.credit_service import CreditService
+    db = get_db()
+
+    if body.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+
+    result = await CreditService.grant(db, body.user_id, -body.amount, body.reason)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
+
+    return {"message": f"Deducted {body.amount} credits from user #{body.user_id}", **result}
+
+
+@router.post("/credits/set-tier")
+async def admin_set_tier(body: TierUpdateRequest, current_user: dict = Depends(get_admin_user)):
+    """Admin: set a user's subscription tier and reset credits."""
+    from app_fastapi import get_db
+    from app_fastapi.services.credit_service import CreditService, TIER_CONFIG
+    db = get_db()
+
+    if body.tier not in TIER_CONFIG:
+        raise HTTPException(status_code=400, detail=f"Invalid tier. Must be one of: {list(TIER_CONFIG.keys())}")
+
+    result = await CreditService.reset_for_subscription(db, body.user_id, body.tier)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
+
+    return {"message": f"Set user #{body.user_id} to '{body.tier}' tier", **result}
+
+
+@router.get("/credits/overview")
+async def admin_credit_overview(current_user: dict = Depends(get_admin_user)):
+    """Admin: overview of credit usage across all users."""
+    from app_fastapi import get_db
+    db = get_db()
+
+    # Top 10 users by credit spend this month
+    from datetime import datetime
+    now = datetime.utcnow()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    pipeline = [
+        {"$match": {"created_at": {"$gte": month_start}, "amount": {"$lt": 0}}},
+        {"$group": {"_id": "$user_id", "total_spent": {"$sum": {"$abs": "$amount"}}}},
+        {"$sort": {"total_spent": -1}},
+        {"$limit": 10},
+    ]
+    top_spenders = await db.credit_transactions.aggregate(pipeline).to_list(10)
+
+    # Tier distribution
+    tier_pipeline = [
+        {"$group": {"_id": {"$ifNull": ["$subscription_tier", "free"]}, "count": {"$sum": 1}}},
+    ]
+    tier_dist = await db.users.aggregate(tier_pipeline).to_list(10)
+
+    return {
+        "top_spenders": [{"user_id": s["_id"], "credits_spent": s["total_spent"]} for s in top_spenders],
+        "tier_distribution": {t["_id"]: t["count"] for t in tier_dist},
+    }
+

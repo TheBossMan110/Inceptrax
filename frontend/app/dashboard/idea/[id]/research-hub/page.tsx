@@ -2,19 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import {
-  Loader2,
   FlaskConical,
   ExternalLink,
   CheckCircle2,
   Circle,
   Wrench,
   BookOpen,
-  Calendar,
   ChevronRight,
   ArrowUpRight,
   Zap,
@@ -110,18 +106,43 @@ const TABS = [
 
 type TabId = typeof TABS[number]["id"]
 
-// Phase styling
+// Phase styling — Midnight Aurora tokens
 const PHASE_CONFIG: Record<string, { color: string; bg: string; dot: string }> = {
-  Validation: { color: "text-blue-600 dark:text-blue-400",  bg: "bg-blue-50 dark:bg-blue-950/30",  dot: "bg-blue-500" },
-  MVP:        { color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", dot: "bg-violet-500" },
-  Build:      { color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", dot: "bg-violet-500" },
-  Growth:     { color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", dot: "bg-emerald-500" },
+  Validation: { color: "text-brand-cyan",   bg: "bg-brand-cyan/[0.04]",   dot: "bg-brand-cyan" },
+  MVP:        { color: "text-brand-violet", bg: "bg-brand-violet/[0.04]", dot: "bg-brand-violet" },
+  Build:      { color: "text-brand-violet", bg: "bg-brand-violet/[0.04]", dot: "bg-brand-violet" },
+  Growth:     { color: "text-success",      bg: "bg-success/[0.04]",      dot: "bg-success" },
 }
 
-const MILESTONE_COLORS: Record<string, { bg: string; border: string; icon: string }> = {
-  Validation: { bg: "bg-blue-500/10", border: "border-blue-500/30", icon: "text-blue-500" },
-  Build:      { bg: "bg-violet-500/10", border: "border-violet-500/30", icon: "text-violet-500" },
-  Growth:     { bg: "bg-emerald-500/10", border: "border-emerald-500/30", icon: "text-emerald-500" },
+const MILESTONE_COLORS: Record<string, { bg: string; border: string; icon: string; fill: string }> = {
+  Validation: { bg: "bg-brand-cyan/[0.07]",   border: "border-brand-cyan/25",   icon: "text-brand-cyan",   fill: "bg-brand-cyan" },
+  Build:      { bg: "bg-brand-violet/[0.07]", border: "border-brand-violet/25", icon: "text-brand-violet", fill: "bg-brand-violet" },
+  Growth:     { bg: "bg-success/[0.07]",      border: "border-success/25",      icon: "text-success",      fill: "bg-success" },
+}
+
+const EASE = [0.22, 1, 0.36, 1] as const
+
+const listVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+}
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE } },
+}
+
+/** Gradient progress bar (cyan → indigo → violet) */
+function GradientBar({ value, className }: { value: number; className?: string }) {
+  return (
+    <div className={cn("h-1.5 rounded-full bg-white/[0.06] overflow-hidden", className)}>
+      <motion.div
+        className="h-full rounded-full bg-gradient-to-r from-brand-cyan via-brand to-brand-violet"
+        initial={{ width: 0 }}
+        animate={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+        transition={{ duration: 0.7, ease: EASE }}
+      />
+    </div>
+  )
 }
 
 /**
@@ -220,30 +241,29 @@ export default function ResearchHubPage() {
   // ─────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[70vh] items-center justify-center gap-6">
-        <div className="relative">
-          <div className="h-16 w-16 rounded-full border-4 border-muted animate-pulse" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <FlaskConical className="h-7 w-7 text-primary animate-bounce" />
+      <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
+        <div className="flex flex-col items-center justify-center gap-6 py-10 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-2xl bg-brand/25 blur-xl animate-pulse-glow" />
+            <div className="relative h-16 w-16 rounded-2xl bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/25 flex items-center justify-center">
+              <FlaskConical className="h-7 w-7 text-brand-cyan" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="font-semibold text-foreground">Generating your Research Hub…</p>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Our AI is curating resources, tools, and a 90-day plan specific to your idea.
+            </p>
           </div>
         </div>
-        <div className="text-center space-y-2">
-          <p className="font-semibold text-foreground">Generating your Research Hub…</p>
-          <p className="text-sm text-muted-foreground max-w-xs">
-            Our AI is curating resources, tools, and a 90-day plan specific to your idea.
-          </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="skeleton h-20 rounded-2xl" style={{ animationDelay: `${i * 120}ms` }} />
+          ))}
         </div>
-        <div className="flex gap-2">
-          {["Research", "Checklist", "Resources", "Milestones"].map((label, i) => (
-            <div
-              key={label}
-              className="h-1.5 w-16 rounded-full bg-muted overflow-hidden"
-            >
-              <div
-                className="h-full bg-primary rounded-full animate-pulse"
-                style={{ animationDelay: `${i * 200}ms` }}
-              />
-            </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="skeleton h-28 rounded-2xl" style={{ animationDelay: `${i * 120}ms` }} />
           ))}
         </div>
       </div>
@@ -255,13 +275,17 @@ export default function ResearchHubPage() {
   // ─────────────────────────────────────────────
   if (error || !hub) {
     return (
-      <div className="flex flex-col h-[60vh] items-center justify-center gap-4 text-center">
-        <AlertCircle className="h-12 w-12 text-destructive" />
-        <h2 className="text-2xl font-bold text-foreground">Hub Generation Failed</h2>
-        <p className="text-muted-foreground max-w-sm">{error || "Unknown error occurred."}</p>
-        <Button onClick={() => fetchHub()} className="gap-2 mt-2">
-          <RefreshCw className="h-4 w-4" /> Try Again
-        </Button>
+      <div className="max-w-lg mx-auto py-10">
+        <div className="card-premium rounded-2xl py-16 px-6 text-center">
+          <div className="w-12 h-12 mx-auto rounded-xl bg-danger/10 border border-danger/25 flex items-center justify-center mb-5">
+            <AlertCircle className="h-6 w-6 text-danger" />
+          </div>
+          <h2 className="text-xl font-semibold tracking-tight">Hub Generation Failed</h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">{error || "Unknown error occurred."}</p>
+          <Button onClick={() => fetchHub()} className="gap-2 mt-6 rounded-xl bg-primary hover:bg-primary/90 glow-primary press">
+            <RefreshCw className="h-4 w-4" /> Try Again
+          </Button>
+        </div>
       </div>
     )
   }
@@ -288,27 +312,27 @@ export default function ResearchHubPage() {
   // Render
   // ─────────────────────────────────────────────
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-16">
+    <div className="space-y-8 max-w-5xl mx-auto pb-16 animate-fade-up">
       {/* ── Hero ── */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-none gap-1.5">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[11px] font-mono uppercase tracking-[0.18em] text-brand-cyan">
               <FlaskConical className="h-3 w-3" />
               Research &amp; Execution Hub
-            </Badge>
+            </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-gradient-subtle">
             Your Execution Playbook
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm">
             Curated resources, step-by-step guides, and tools — tailored to your idea&apos;s stage and industry.
           </p>
         </div>
         <Button
           variant="outline"
           size="sm"
-          className="gap-2 shrink-0"
+          className="gap-2 shrink-0 rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/[0.07] press"
           onClick={() => fetchHub(true)}
         >
           <RefreshCw className="h-3.5 w-3.5" />
@@ -317,27 +341,28 @@ export default function ResearchHubPage() {
       </div>
 
       {/* ── Stat Pills ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <motion.div variants={listVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Research Links",  value: hub.research_links.length,        icon: BookOpen,   color: "text-blue-500" },
-          { label: "Checklist Steps", value: `${totalDone}/${totalSteps}`,     icon: CheckCircle2, color: "text-violet-500" },
-          { label: "Resources",       value: (hub.tool_recommendations.length + communities.length + investors.length + templates.length),  icon: Wrench,     color: "text-amber-500" },
-          { label: "Milestones",      value: milestones.length > 0 ? `${Object.keys(completedPhases).filter(k => completedPhases[k]).length}/${milestones.length}` : "3 Phases", icon: Trophy,  color: "text-emerald-500" },
+          { label: "Research Links",  value: hub.research_links.length,        icon: BookOpen,   color: "text-brand-cyan",   chip: "from-brand-cyan/25 to-brand/15 border-brand-cyan/20" },
+          { label: "Checklist Steps", value: `${totalDone}/${totalSteps}`,     icon: CheckCircle2, color: "text-brand-violet", chip: "from-brand-violet/25 to-brand-fuchsia/15 border-brand-violet/20" },
+          { label: "Resources",       value: (hub.tool_recommendations.length + communities.length + investors.length + templates.length),  icon: Wrench,     color: "text-warning",      chip: "from-warning/25 to-warning/10 border-warning/20" },
+          { label: "Milestones",      value: milestones.length > 0 ? `${Object.keys(completedPhases).filter(k => completedPhases[k]).length}/${milestones.length}` : "3 Phases", icon: Trophy,  color: "text-success",      chip: "from-success/25 to-success/10 border-success/20" },
         ].map(stat => (
-          <div
+          <motion.div
             key={stat.label}
-            className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card"
+            variants={itemVariants}
+            className="flex items-center gap-3 p-4 rounded-2xl card-premium"
           >
-            <div className={cn("p-2 rounded-lg bg-muted", stat.color)}>
-              <stat.icon className="h-4 w-4" />
+            <div className={cn("w-9 h-9 rounded-lg bg-gradient-to-br border flex items-center justify-center shrink-0", stat.chip)}>
+              <stat.icon className={cn("h-4 w-4", stat.color)} />
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-              <p className="text-lg font-bold text-foreground leading-tight">{stat.value}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground/70 truncate">{stat.label}</p>
+              <p className="text-lg font-bold tabular-nums text-foreground leading-tight">{stat.value}</p>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* ── Section Tabs ── */}
       <div className="flex gap-2 flex-wrap">
@@ -346,13 +371,13 @@ export default function ResearchHubPage() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+              "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all press",
               activeTab === tab.id
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                ? "bg-brand/15 text-foreground border border-brand/25"
+                : "text-muted-foreground border border-transparent hover:bg-white/[0.05]"
             )}
           >
-            <tab.icon className="h-3.5 w-3.5" />
+            <tab.icon className={cn("h-3.5 w-3.5", activeTab === tab.id && "text-brand-cyan")} />
             {tab.label}
           </button>
         ))}
@@ -363,39 +388,40 @@ export default function ResearchHubPage() {
       ═══════════════════════════════════════════ */}
       {activeTab === "research" && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Deep Dive Research</h2>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <BookOpen className="h-5 w-5 text-brand-cyan" />
+            <h2 className="text-lg font-semibold text-foreground">Deep Dive Research</h2>
             <span className="text-sm text-muted-foreground ml-1">— Authoritative sources for your market</span>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <motion.div variants={listVariants} initial="hidden" animate="show" className="grid gap-4 md:grid-cols-2">
             {hub.research_links.map((link, i) => (
-              <a
+              <motion.a
                 key={i}
+                variants={itemVariants}
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group block p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all duration-200"
+                className="group block p-4 rounded-2xl card-premium card-premium-hover"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Badge variant="outline" className="text-xs font-medium border-border shrink-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.14em] px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-muted-foreground shrink-0">
                         {link.source}
-                      </Badge>
+                      </span>
                     </div>
-                    <h3 className="font-semibold text-foreground text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                    <h3 className="font-semibold text-foreground text-sm leading-snug group-hover:text-brand-cyan transition-colors line-clamp-2">
                       {link.title}
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
                       {link.relevance}
                     </p>
                   </div>
-                  <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+                  <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-brand-cyan transition-colors shrink-0 mt-1" />
                 </div>
-              </a>
+              </motion.a>
             ))}
-          </div>
+          </motion.div>
           {hub.research_links.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">No research links available.</p>
           )}
@@ -407,19 +433,19 @@ export default function ResearchHubPage() {
       ═══════════════════════════════════════════ */}
       {activeTab === "checklist" && (
         <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Execution Checklist</h2>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <CheckCircle2 className="h-5 w-5 text-brand-cyan" />
+            <h2 className="text-lg font-semibold text-foreground">Execution Checklist</h2>
             <span className="text-sm text-muted-foreground ml-1">— Your progress is saved automatically</span>
           </div>
 
           {/* Overall progress */}
-          <div className="p-4 rounded-xl border border-border bg-card">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-foreground">Overall Progress</span>
-              <span className="text-sm font-bold text-primary">{totalDone}/{totalSteps} steps</span>
+          <div className="p-5 rounded-2xl card-premium">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground/70">Overall Progress</span>
+              <span className="text-sm font-bold tabular-nums text-brand-cyan">{totalDone}/{totalSteps} steps</span>
             </div>
-            <Progress value={totalSteps ? Math.round(totalDone / totalSteps * 100) : 0} className="h-2" />
+            <GradientBar value={totalSteps ? Math.round(totalDone / totalSteps * 100) : 0} className="h-2" />
           </div>
 
           {/* Phases */}
@@ -432,27 +458,28 @@ export default function ResearchHubPage() {
               <div key={phase} className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className={cn("w-2.5 h-2.5 rounded-full", cfg.dot)} />
-                    <h3 className={cn("font-semibold text-sm uppercase tracking-wider", cfg.color)}>
+                    <div className={cn("w-2 h-2 rounded-full", cfg.dot)} />
+                    <h3 className={cn("font-mono font-semibold text-xs uppercase tracking-[0.18em]", cfg.color)}>
                       {phase} Phase
                     </h3>
                   </div>
-                  <span className="text-xs text-muted-foreground font-medium">{prog}% complete</span>
+                  <span className="text-xs text-muted-foreground font-medium tabular-nums">{prog}% complete</span>
                 </div>
-                <Progress value={prog} className="h-1.5" />
-                <div className="space-y-2">
+                <GradientBar value={prog} className="h-1" />
+                <motion.div variants={listVariants} initial="hidden" animate="show" className="space-y-2">
                   {items.map((item, i) => {
                     const key    = `${phase}-${i}`
                     const isDone = !!checked[key]
                     return (
-                      <button
+                      <motion.button
                         key={i}
+                        variants={itemVariants}
                         onClick={() => toggleCheck(key)}
                         className={cn(
-                          "group w-full flex items-start gap-3 p-3.5 rounded-xl border transition-all duration-200 text-left",
+                          "group w-full flex items-start gap-3 p-3.5 rounded-xl border transition-all duration-200 text-left press",
                           isDone
-                            ? "bg-muted/40 border-border/50 opacity-70"
-                            : cn("border-border hover:border-primary/30", cfg.bg)
+                            ? "bg-white/[0.02] border-white/[0.05] opacity-60"
+                            : cn("border-white/[0.08] hover:border-brand/30", cfg.bg)
                         )}
                       >
                         <div className="shrink-0 mt-0.5">
@@ -473,10 +500,10 @@ export default function ResearchHubPage() {
                             </p>
                           )}
                         </div>
-                      </button>
+                      </motion.button>
                     )
                   })}
-                </div>
+                </motion.div>
               </div>
             )
           })}
@@ -491,73 +518,70 @@ export default function ResearchHubPage() {
           {/* Tools */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-primary" />
+              <Wrench className="h-5 w-5 text-brand-cyan" />
               <h2 className="text-lg font-semibold text-foreground">Tools</h2>
-              <Badge variant="secondary" className="text-xs">{hub.tool_recommendations.length}</Badge>
+              <span className="text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-muted-foreground">{hub.tool_recommendations.length}</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <motion.div variants={listVariants} initial="hidden" animate="show" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {hub.tool_recommendations.map((tool, i) => (
-                <Card key={i} className="border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 overflow-hidden group">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <Badge variant="secondary" className="text-xs mb-2 font-medium">
-                          {tool.category}
-                        </Badge>
-                        <CardTitle className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                          {tool.name}
-                        </CardTitle>
-                      </div>
-                      <div className="p-1.5 rounded-lg bg-muted mt-1 shrink-0">
-                        <Zap className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
+                <motion.div key={i} variants={itemVariants} className="rounded-2xl card-premium card-premium-hover overflow-hidden group p-5">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="min-w-0">
+                      <span className="inline-block text-[10px] font-mono uppercase tracking-[0.14em] px-2 py-0.5 rounded-full bg-brand/10 border border-brand/25 text-brand-cyan mb-2">
+                        {tool.category}
+                      </span>
+                      <h3 className="text-base font-semibold text-foreground group-hover:text-brand-cyan transition-colors">
+                        {tool.name}
+                      </h3>
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0 space-y-3">
-                    <p className="text-xs text-muted-foreground leading-relaxed">{tool.use_case}</p>
-                    <a href={tool.url} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm" className="w-full gap-2 text-xs">
-                        Open Tool <ExternalLink className="h-3 w-3" />
-                      </Button>
-                    </a>
-                  </CardContent>
-                </Card>
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shrink-0">
+                      <Zap className="h-3.5 w-3.5 text-brand-cyan" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-4">{tool.use_case}</p>
+                  <a href={tool.url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="w-full gap-2 text-xs rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/[0.07] press">
+                      Open Tool <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </a>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           {/* Communities */}
           {communities.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-500" />
+                <Users className="h-5 w-5 text-brand-violet" />
                 <h2 className="text-lg font-semibold text-foreground">Communities</h2>
-                <Badge variant="secondary" className="text-xs">{communities.length}</Badge>
+                <span className="text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-muted-foreground">{communities.length}</span>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
+              <motion.div variants={listVariants} initial="hidden" animate="show" className="grid gap-3 md:grid-cols-2">
                 {communities.map((c, i) => (
-                  <a
+                  <motion.a
                     key={i}
+                    variants={itemVariants}
                     href={c.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:border-blue-500/30 hover:shadow-md transition-all"
+                    className="group flex items-start gap-3 p-4 rounded-2xl card-premium hover:border-brand-violet/30 transition-colors"
                   >
-                    <div className="p-2 rounded-lg bg-blue-500/10 shrink-0">
-                      <Users className="h-4 w-4 text-blue-500" />
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-violet/25 to-brand-fuchsia/15 border border-brand-violet/20 flex items-center justify-center shrink-0">
+                      <Users className="h-4 w-4 text-brand-violet" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-sm text-foreground group-hover:text-blue-600 transition-colors">{c.name}</h3>
-                        <Badge variant="outline" className="text-[10px] shrink-0">{c.type}</Badge>
+                        <h3 className="font-semibold text-sm text-foreground group-hover:text-brand-violet transition-colors">{c.name}</h3>
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-muted-foreground shrink-0">{c.type}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{c.members} members</p>
+                      <p className="text-xs text-muted-foreground tabular-nums">{c.members} members</p>
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{c.relevance}</p>
                     </div>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-blue-500 shrink-0" />
-                  </a>
+                    <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-brand-violet shrink-0" />
+                  </motion.a>
                 ))}
-              </div>
+              </motion.div>
             </div>
           )}
 
@@ -565,34 +589,35 @@ export default function ResearchHubPage() {
           {investors.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-emerald-500" />
+                <DollarSign className="h-5 w-5 text-success" />
                 <h2 className="text-lg font-semibold text-foreground">Investors</h2>
-                <Badge variant="secondary" className="text-xs">{investors.length}</Badge>
+                <span className="text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-muted-foreground">{investors.length}</span>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
+              <motion.div variants={listVariants} initial="hidden" animate="show" className="grid gap-3 md:grid-cols-2">
                 {investors.map((inv, i) => (
-                  <a
+                  <motion.a
                     key={i}
+                    variants={itemVariants}
                     href={inv.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:border-emerald-500/30 hover:shadow-md transition-all"
+                    className="group flex items-start gap-3 p-4 rounded-2xl card-premium hover:border-success/30 transition-colors"
                   >
-                    <div className="p-2 rounded-lg bg-emerald-500/10 shrink-0">
-                      <DollarSign className="h-4 w-4 text-emerald-500" />
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-success/25 to-success/10 border border-success/20 flex items-center justify-center shrink-0">
+                      <DollarSign className="h-4 w-4 text-success" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm text-foreground group-hover:text-emerald-600 transition-colors">{inv.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[10px]">{inv.type}</Badge>
-                        <Badge variant="outline" className="text-[10px]">{inv.stage}</Badge>
+                      <h3 className="font-semibold text-sm text-foreground group-hover:text-success transition-colors">{inv.name}</h3>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-muted-foreground">{inv.type}</span>
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-muted-foreground">{inv.stage}</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{inv.focus}</p>
                     </div>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-emerald-500 shrink-0" />
-                  </a>
+                    <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-success shrink-0" />
+                  </motion.a>
                 ))}
-              </div>
+              </motion.div>
             </div>
           )}
 
@@ -600,28 +625,29 @@ export default function ResearchHubPage() {
           {templates.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-amber-500" />
+                <FileText className="h-5 w-5 text-warning" />
                 <h2 className="text-lg font-semibold text-foreground">Templates</h2>
-                <Badge variant="secondary" className="text-xs">{templates.length}</Badge>
+                <span className="text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-muted-foreground">{templates.length}</span>
               </div>
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              <motion.div variants={listVariants} initial="hidden" animate="show" className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {templates.map((t, i) => (
-                  <a
+                  <motion.a
                     key={i}
+                    variants={itemVariants}
                     href={t.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex flex-col p-4 rounded-xl border border-border bg-card hover:border-amber-500/30 hover:shadow-md transition-all"
+                    className="group flex flex-col p-4 rounded-2xl card-premium hover:border-warning/30 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <Badge variant="secondary" className="text-[10px] font-medium">{t.type}</Badge>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-amber-500" />
+                      <span className="text-[10px] font-mono uppercase tracking-[0.14em] px-2 py-0.5 rounded-full bg-warning/10 border border-warning/25 text-warning">{t.type}</span>
+                      <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-warning" />
                     </div>
-                    <h3 className="font-semibold text-sm text-foreground group-hover:text-amber-600 transition-colors">{t.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.description}</p>
-                  </a>
+                    <h3 className="font-semibold text-sm text-foreground group-hover:text-warning transition-colors">{t.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{t.description}</p>
+                  </motion.a>
                 ))}
-              </div>
+              </motion.div>
             </div>
           )}
 
@@ -636,17 +662,17 @@ export default function ResearchHubPage() {
       ═══════════════════════════════════════════ */}
       {activeTab === "progress" && (
         <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Trophy className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">90-Day Progress Tracker</h2>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <Trophy className="h-5 w-5 text-brand-cyan" />
+            <h2 className="text-lg font-semibold text-foreground">90-Day Progress Tracker</h2>
             <span className="text-sm text-muted-foreground ml-1">— 3-phase milestone roadmap</span>
           </div>
 
           {/* Phase overview bar */}
-          <div className="p-4 rounded-xl border border-border bg-card">
+          <div className="p-5 rounded-2xl card-premium">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-medium text-foreground">Overall Progress</span>
-              <span className="text-sm font-bold text-primary">
+              <span className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground/70">Overall Progress</span>
+              <span className="text-sm font-bold tabular-nums text-brand-cyan">
                 {Object.keys(completedPhases).filter(k => completedPhases[k]).length}/{milestones.length || 3} phases
               </span>
             </div>
@@ -659,47 +685,57 @@ export default function ResearchHubPage() {
                 <div
                   key={i}
                   className={cn(
-                    "flex-1 h-3 rounded-full transition-all",
+                    "flex-1 h-2.5 rounded-full transition-all",
                     completedPhases[m.phase]
-                      ? MILESTONE_COLORS[m.phase]?.bg || "bg-primary"
-                      : "bg-muted"
+                      ? MILESTONE_COLORS[m.phase]?.fill || "bg-brand"
+                      : "bg-white/[0.06]"
                   )}
-                  style={{
-                    background: completedPhases[m.phase]
-                      ? i === 0 ? "rgb(59, 130, 246)" : i === 1 ? "rgb(139, 92, 246)" : "rgb(16, 185, 129)"
-                      : undefined
-                  }}
                 />
               ))}
             </div>
           </div>
 
           {/* Milestone Cards */}
-          <div className="space-y-6">
+          <motion.div variants={listVariants} initial="hidden" animate="show" className="space-y-6">
             {milestones.map((milestone, i) => {
               const isComplete = !!completedPhases[milestone.phase]
               const colors = MILESTONE_COLORS[milestone.phase] || MILESTONE_COLORS.Validation
               return (
-                <Card key={i} className={cn(
-                  "border-2 overflow-hidden transition-all",
-                  isComplete ? "border-border/50 opacity-80" : colors.border
-                )}>
-                  <CardHeader className={cn("pb-3", colors.bg)}>
-                    <div className="flex items-start justify-between">
+                <motion.div
+                  key={i}
+                  variants={itemVariants}
+                  className={cn(
+                    "rounded-2xl card-premium overflow-hidden transition-all",
+                    isComplete ? "opacity-75" : cn("border", colors.border)
+                  )}
+                >
+                  <div className={cn("p-5 border-b border-white/[0.06]", colors.bg)}>
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="text-xs font-semibold">{milestone.duration}</Badge>
-                          <Badge className={cn("text-xs", isComplete ? "bg-green-500" : "bg-muted text-muted-foreground")}>
-                            {isComplete ? "✓ Complete" : "In Progress"}
-                          </Badge>
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-muted-foreground">{milestone.duration}</span>
+                          <span className={cn(
+                            "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full",
+                            isComplete
+                              ? "bg-success/10 text-success border border-success/25"
+                              : "bg-white/[0.05] text-muted-foreground border border-white/10"
+                          )}>
+                            {isComplete && <CheckCircle2 className="h-3 w-3" />}
+                            {isComplete ? "Complete" : "In Progress"}
+                          </span>
                         </div>
-                        <CardTitle className="text-xl">{milestone.title}</CardTitle>
-                        <p className="text-sm text-muted-foreground font-medium mt-0.5">{milestone.phase} Phase</p>
+                        <h3 className="text-lg font-semibold tracking-tight">{milestone.title}</h3>
+                        <p className={cn("text-sm font-medium mt-0.5", colors.icon)}>{milestone.phase} Phase</p>
                       </div>
                       <Button
                         variant={isComplete ? "outline" : "default"}
                         size="sm"
-                        className="gap-2 shrink-0"
+                        className={cn(
+                          "gap-2 shrink-0 rounded-xl press",
+                          isComplete
+                            ? "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
+                            : "bg-primary hover:bg-primary/90 glow-primary"
+                        )}
                         onClick={() => togglePhaseComplete(milestone.phase)}
                       >
                         {isComplete ? (
@@ -709,16 +745,16 @@ export default function ResearchHubPage() {
                         )}
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-5 space-y-5">
+                  </div>
+                  <div className="p-5 space-y-5">
                     {/* Goals */}
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Goals</h4>
+                      <h4 className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground/70 mb-3">Goals</h4>
                       <div className="grid gap-2 md:grid-cols-2">
                         {milestone.goals.map((goal, j) => (
-                          <div key={j} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-muted/30">
+                          <div key={j} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                             <ChevronRight className={cn("h-4 w-4 shrink-0 mt-0.5", colors.icon)} />
-                            <span className="text-sm text-foreground">{goal}</span>
+                            <span className="text-sm text-foreground/90">{goal}</span>
                           </div>
                         ))}
                       </div>
@@ -727,12 +763,12 @@ export default function ResearchHubPage() {
                     {/* KPIs */}
                     {milestone.kpis && milestone.kpis.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Key Metrics (KPIs)</h4>
+                        <h4 className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground/70 mb-3">Key Metrics (KPIs)</h4>
                         <div className="flex flex-wrap gap-2">
                           {milestone.kpis.map((kpi, j) => (
-                            <Badge key={j} variant="outline" className="text-xs font-medium py-1.5 px-3">
+                            <span key={j} className="text-xs font-medium tabular-nums py-1.5 px-3 rounded-full bg-white/[0.04] border border-white/10 text-foreground/85">
                               {kpi}
-                            </Badge>
+                            </span>
                           ))}
                         </div>
                       </div>
@@ -740,38 +776,42 @@ export default function ResearchHubPage() {
 
                     {/* Completion message (shown when phase is marked complete) */}
                     {isComplete && milestone.completion_message && (
-                      <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/30 flex items-start gap-3">
-                        <PartyPopper className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                      <div className="p-4 rounded-xl bg-success/[0.07] border border-success/25 flex items-start gap-3">
+                        <PartyPopper className="h-5 w-5 text-success shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm font-semibold text-green-700 dark:text-green-400 mb-0.5">Phase Complete! 🎉</p>
-                          <p className="text-sm text-green-600 dark:text-green-400/80">{milestone.completion_message}</p>
+                          <p className="text-sm font-semibold text-success mb-0.5">Phase Complete!</p>
+                          <p className="text-sm text-success/80">{milestone.completion_message}</p>
                         </div>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </motion.div>
               )
             })}
-          </div>
+          </motion.div>
 
           {milestones.length === 0 && (
-            <div className="text-center py-12 space-y-3">
-              <Trophy className="h-10 w-10 text-muted-foreground mx-auto" />
+            <div className="card-premium rounded-2xl py-14 px-6 text-center space-y-3">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center">
+                <Trophy className="h-6 w-6 text-brand-cyan" />
+              </div>
               <p className="font-semibold text-foreground">No milestones generated yet</p>
               <p className="text-sm text-muted-foreground">Try refreshing the hub to generate your 90-day roadmap.</p>
             </div>
           )}
 
           {/* CTA to checklist */}
-          <div className="mt-8 p-5 rounded-xl border border-dashed border-border bg-muted/20 text-center space-y-2">
-            <TrendingUp className="h-8 w-8 text-primary mx-auto" />
+          <div className="mt-8 relative rounded-2xl border-gradient p-6 text-center space-y-2">
+            <div className="w-11 h-11 mx-auto rounded-xl bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-brand-cyan" />
+            </div>
             <p className="font-semibold text-foreground">Track Daily Progress</p>
             <p className="text-sm text-muted-foreground">
               Use the Execution Checklist to track your daily tasks within each phase.
             </p>
             <Button
               size="sm"
-              className="mt-2 gap-2"
+              className="mt-2 gap-2 rounded-xl bg-primary hover:bg-primary/90 glow-primary shimmer press"
               onClick={() => setActiveTab("checklist")}
             >
               <CheckCircle2 className="h-4 w-4" />

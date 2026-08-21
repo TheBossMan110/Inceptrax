@@ -89,6 +89,8 @@ def _user_to_dict(user_doc: dict) -> dict:
         "email": user_doc.get("email", ""),
         "is_admin": user_doc.get("is_admin", False),
         "api_credits_used": user_doc.get("api_credits_used", 0),
+        "credit_balance": user_doc.get("credit_balance", 0),
+        "subscription_tier": user_doc.get("subscription_tier", "free"),
         "created_at": user_doc["created_at"].isoformat() if isinstance(user_doc.get("created_at"), datetime.datetime) else str(user_doc.get("created_at", "")),
         "is_discoverable": user_doc.get("is_discoverable", False),
         "bio": user_doc.get("bio"),
@@ -162,6 +164,8 @@ async def register(body: RegisterRequest):
         "skills": None,
         "looking_for": None,
         "linkedin_url": None,
+        "credit_balance": 50,
+        "subscription_tier": "free",
     }
     await db.users.insert_one(user_doc)
 

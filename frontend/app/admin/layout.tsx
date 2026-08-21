@@ -29,8 +29,8 @@ export default function AdminLayout({
 
   if (loading || !user || !user.is_admin) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
       </div>
     )
   }
@@ -38,13 +38,18 @@ export default function AdminLayout({
   return (
     <div className="flex h-screen bg-background overflow-hidden relative">
       {/* Sidebar — hidden on mobile, visible on md+ */}
-      <aside className="hidden md:flex w-64 shrink-0 border-r border-border">
+      <aside className="hidden md:flex w-60 shrink-0 border-r border-sidebar-border">
         <AdminSidebar />
       </aside>
 
-      <div className="flex flex-col flex-grow min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-grow min-w-0 overflow-hidden relative">
+        {/* Ambient glow behind content */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-72 w-[720px] rounded-full bg-brand/[0.06] blur-[120px]"
+        />
         <DashboardHeader />
-        <main className="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+        <main className="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-8 animate-fade-in pb-24 md:pb-8 relative">
           {children}
         </main>
       </div>

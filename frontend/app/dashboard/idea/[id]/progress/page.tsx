@@ -17,7 +17,7 @@ export default function IdeaProgressPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
+    <div className="max-w-2xl mx-auto py-12 px-4 animate-fade-up">
       <StageTracker
         ideaId={ideaId}
         onComplete={(score) => {

@@ -1,11 +1,17 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist" })
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument",
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.inceptrax.com"),
@@ -98,10 +104,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`dark ${geist.variable} ${geistMono.variable} ${instrumentSerif.variable}`}
+    >
       <head>
         <link rel="canonical" href="https://www.inceptrax.com" />
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#12121c" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning={true}>
         <PostHogProvider>

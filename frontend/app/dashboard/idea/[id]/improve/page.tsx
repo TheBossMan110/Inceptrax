@@ -2,11 +2,9 @@
 
 import { useEffect, useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
 import {
   Loader2,
   Sparkles,
@@ -34,6 +32,8 @@ interface Message {
   layer?: string
   layer_label?: string
 }
+
+const EASE = [0.22, 1, 0.36, 1] as const
 
 export default function ImprovePage() {
   const params = useParams()
@@ -141,15 +141,17 @@ export default function ImprovePage() {
 
   if (isStarting) {
     return (
-      <div className="flex flex-col h-[70vh] items-center justify-center gap-4">
+      <div className="flex flex-col h-[70vh] items-center justify-center gap-5 animate-fade-in">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-violet-500/20 animate-ping" />
-          <div className="relative h-14 w-14 rounded-full bg-violet-500/10 flex items-center justify-center">
-            <Sparkles className="h-6 w-6 text-violet-500 animate-pulse" />
+          <div className="absolute inset-0 rounded-2xl bg-brand-violet/25 blur-xl animate-pulse-glow" />
+          <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-brand-violet/25 to-brand-fuchsia/15 border border-brand-violet/25 flex items-center justify-center">
+            <Sparkles className="h-6 w-6 text-brand-violet" />
           </div>
         </div>
-        <p className="font-semibold text-foreground">Starting Improvement Session…</p>
-        <p className="text-sm text-muted-foreground">AI is analyzing your idea&apos;s weaknesses</p>
+        <div className="text-center">
+          <p className="font-semibold text-foreground">Starting Improvement Session…</p>
+          <p className="text-sm text-muted-foreground mt-1">AI is analyzing your idea&apos;s weaknesses</p>
+        </div>
       </div>
     )
   }
@@ -157,31 +159,31 @@ export default function ImprovePage() {
   if (error) {
     return (
       <div className="flex flex-col h-[60vh] items-center justify-center gap-4 text-center">
-        <p className="text-destructive font-semibold">{error}</p>
-        <Button variant="outline" onClick={() => router.back()}>Go Back</Button>
+        <p className="text-danger font-semibold">{error}</p>
+        <Button variant="outline" className="rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/[0.07] press" onClick={() => router.back()}>Go Back</Button>
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto pb-8">
+    <div className="max-w-3xl mx-auto pb-8 animate-fade-up">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 rounded-lg hover:bg-white/[0.06] press"
             onClick={() => router.push(`/dashboard/idea/${ideaId}/validation`)}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground">AI Improvement Mode</h1>
-              <Badge className="bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20">
-                <Sparkles className="h-3 w-3 mr-1" /> Layers Engine
-              </Badge>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl font-semibold tracking-tight text-gradient-subtle">AI Improvement Mode</h1>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.14em] px-2.5 py-0.5 rounded-full bg-brand-violet/10 text-brand-violet border border-brand-violet/25">
+                <Sparkles className="h-3 w-3" /> Layers Engine
+              </span>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">Answer questions to refine your idea and earn the AI-Refined badge</p>
           </div>
@@ -191,60 +193,70 @@ export default function ImprovePage() {
       {/* Progress bar */}
       <div className="mb-6 space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-xs font-medium text-muted-foreground">Improvement Progress</span>
-          <span className="text-xs font-bold text-violet-600 dark:text-violet-400">{progress}%</span>
+          <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-muted-foreground/70">Improvement Progress</span>
+          <span className="text-xs font-bold tabular-nums text-brand-cyan">{progress}%</span>
         </div>
-        <Progress value={progress} className="h-2" />
+        <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-brand-cyan via-brand to-brand-violet"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.7, ease: EASE }}
+          />
+        </div>
       </div>
 
       {/* Chat messages */}
       <div className="space-y-4 mb-6 min-h-[40vh]">
         {messages.map((msg, i) => (
-          <div
+          <motion.div
             key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: EASE }}
             className={cn(
               "flex gap-3",
               msg.role === "user" ? "justify-end" : "justify-start"
             )}
           >
             {msg.role === "ai" && (
-              <div className="shrink-0 w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center">
-                <Zap className="h-4 w-4 text-violet-500" />
+              <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-brand-violet/25 to-brand-fuchsia/15 border border-brand-violet/25 flex items-center justify-center">
+                <Zap className="h-4 w-4 text-brand-violet" />
               </div>
             )}
             <div
               className={cn(
                 "max-w-[80%] rounded-2xl px-4 py-3",
                 msg.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card border border-border"
+                  ? "bg-primary text-primary-foreground glow-primary"
+                  : "glass"
               )}
             >
               {msg.role === "ai" && msg.layer_label && (
-                <Badge variant="outline" className="text-[10px] mb-2 font-semibold text-violet-600 border-violet-500/20">
+                <span className="inline-block text-[10px] font-mono uppercase tracking-[0.12em] font-semibold text-brand-violet border border-brand-violet/25 bg-brand-violet/10 rounded-full px-2 py-0.5 mb-2">
                   {msg.layer_label}
-                </Badge>
+                </span>
               )}
               <p className="text-sm leading-relaxed">{msg.content}</p>
             </div>
             {msg.role === "user" && (
-              <div className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <MessageCircle className="h-4 w-4 text-primary" />
+              <div className="shrink-0 w-8 h-8 rounded-full bg-brand/15 border border-brand/25 flex items-center justify-center">
+                <MessageCircle className="h-4 w-4 text-brand-cyan" />
               </div>
             )}
-          </div>
+          </motion.div>
         ))}
 
         {isLoading && (
           <div className="flex gap-3">
-            <div className="shrink-0 w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center">
-              <Zap className="h-4 w-4 text-violet-500" />
+            <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-brand-violet/25 to-brand-fuchsia/15 border border-brand-violet/25 flex items-center justify-center">
+              <Zap className="h-4 w-4 text-brand-violet" />
             </div>
-            <div className="bg-card border border-border rounded-2xl px-4 py-3">
+            <div className="glass rounded-2xl px-4 py-3">
               <div className="flex gap-1">
-                <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="w-2 h-2 rounded-full bg-brand-cyan/50 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 rounded-full bg-brand/50 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 rounded-full bg-brand-violet/50 animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -255,28 +267,28 @@ export default function ImprovePage() {
 
       {/* Complete state — Finalize button */}
       {isComplete ? (
-        <Card className="border-2 border-violet-500/30 bg-violet-500/5">
-          <CardContent className="p-6 text-center space-y-4">
-            <Trophy className="h-10 w-10 text-violet-500 mx-auto" />
-            <div>
-              <h3 className="text-lg font-bold text-foreground">Improvement Session Complete!</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Apply these improvements to update your idea and earn the <strong>AI-Refined ✓</strong> badge.
-              </p>
-            </div>
-            <Button
-              onClick={handleFinalize}
-              disabled={isFinalizing}
-              className="gap-2 bg-violet-600 hover:bg-violet-700"
-            >
-              {isFinalizing ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Applying Improvements...</>
-              ) : (
-                <><CheckCircle2 className="h-4 w-4" /> Apply Improvements &amp; Earn Badge</>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="relative rounded-2xl border-gradient p-6 text-center space-y-4">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-brand-violet/25 to-brand-fuchsia/15 border border-brand-violet/25 flex items-center justify-center">
+            <Trophy className="h-7 w-7 text-brand-violet" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold tracking-tight text-foreground">Improvement Session <span className="accent-serif text-gradient">Complete</span></h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Apply these improvements to update your idea and earn the <strong className="text-foreground">AI-Refined</strong> badge.
+            </p>
+          </div>
+          <Button
+            onClick={handleFinalize}
+            disabled={isFinalizing}
+            className="gap-2 rounded-xl bg-primary hover:bg-primary/90 glow-primary shimmer press"
+          >
+            {isFinalizing ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Applying Improvements...</>
+            ) : (
+              <><CheckCircle2 className="h-4 w-4" /> Apply Improvements &amp; Earn Badge</>
+            )}
+          </Button>
+        </div>
       ) : (
         /* Input area */
         <div className="flex gap-3 items-end">
@@ -285,14 +297,14 @@ export default function ImprovePage() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type your answer..."
-            className="min-h-[48px] max-h-[120px] resize-none rounded-xl"
+            className="min-h-[48px] max-h-[120px] resize-none rounded-xl bg-white/[0.03] border-white/10 focus-visible:border-brand/40"
             disabled={isLoading}
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
             size="icon"
-            className="h-12 w-12 rounded-xl shrink-0"
+            className="h-12 w-12 rounded-xl shrink-0 bg-primary hover:bg-primary/90 glow-primary press"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>

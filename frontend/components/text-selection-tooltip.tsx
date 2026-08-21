@@ -141,7 +141,7 @@ export function TextSelectionTooltip({
                         <Button
                             size="sm"
                             onClick={handleRefineClick}
-                            className="shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white gap-2 rounded-full animate-in fade-in zoom-in duration-200"
+                            className="shadow-lg bg-primary hover:bg-primary/90 glow-primary text-white gap-2 rounded-full animate-in fade-in zoom-in duration-200"
                         >
                             <Sparkles className="h-3 w-3" />
                             Refine with AI

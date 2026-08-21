@@ -29,7 +29,7 @@ export function NotificationBell() {
   const [pollError, setPollError] = useState(false)
   const router = useRouter()
   const retryCountRef = useRef(0)
-  const intervalRef = useRef<NodeJS.Timeout>()
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   const fetchNotifications = useCallback(async () => {
     if (retryCountRef.current >= 5) {
@@ -97,20 +97,20 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative h-9 w-9">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+            <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-[0_0_10px_oklch(0.585_0.222_277/0.6)]">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between p-3 border-b">
+      <PopoverContent className="w-80 p-0 rounded-2xl border-white/10 overflow-hidden" align="end" sideOffset={8}>
+        <div className="flex items-center justify-between p-3 border-b border-white/[0.06]">
           <h4 className="text-sm font-semibold">Notifications</h4>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs h-7 gap-1"
+              className="text-xs h-7 gap-1 text-muted-foreground hover:text-foreground"
               onClick={markAllRead}
             >
               <Check className="h-3 w-3" /> Mark all read
@@ -119,27 +119,30 @@ export function NotificationBell() {
         </div>
         <div className="max-h-[320px] overflow-y-auto">
           {notifications.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">
-              No notifications yet
+            <div className="p-8 text-center">
+              <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center">
+                <Bell className="h-4 w-4 text-brand-cyan" />
+              </div>
+              <p className="text-sm text-muted-foreground">No notifications yet</p>
             </div>
           ) : (
             notifications.slice(0, 10).map((n) => (
               <div
                 key={n.id}
                 className={cn(
-                  "flex items-start gap-3 p-3 border-b last:border-0 transition-colors cursor-pointer hover:bg-muted/50",
-                  !n.is_read && "bg-primary/5"
+                  "flex items-start gap-3 p-3 border-b border-white/[0.05] last:border-0 transition-colors cursor-pointer hover:bg-white/[0.04]",
+                  !n.is_read && "bg-brand/[0.06]"
                 )}
                 onClick={() => handleClick(n)}
               >
                 <div className={cn(
                   "h-2 w-2 rounded-full mt-1.5 shrink-0",
-                  !n.is_read ? "bg-primary" : "bg-transparent"
+                  !n.is_read ? "bg-brand shadow-[0_0_8px_oklch(0.585_0.222_277/0.7)]" : "bg-transparent"
                 )} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{n.title}</p>
                   <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">{timeAgo(n.created_at)}</p>
+                  <p className="text-[10px] font-mono text-muted-foreground/70 mt-1">{timeAgo(n.created_at)}</p>
                 </div>
                 {n.link && <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0 mt-1" />}
               </div>

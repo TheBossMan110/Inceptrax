@@ -6,6 +6,7 @@ file/voice upload.
 """
 
 import asyncio
+import inngest
 import json
 import traceback
 from datetime import datetime
@@ -15,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app_fastapi.dependencies import get_current_user
+from app_fastapi.inngest_client import inngest_client
 
 router = APIRouter()
 
@@ -75,8 +77,15 @@ class CompetitorWatchRequest(BaseModel):
 @router.post("/{idea_id}/founder-match")
 async def founder_match_score(idea_id: int, current_user: dict = Depends(get_current_user)):
     from app_fastapi import get_db
+    from app_fastapi.services.credit_service import CreditService
     from app.services.gemini_service import GeminiService
     db = get_db()
+
+    # Credit gate
+    can_afford, cost, balance = await CreditService.can_afford(db, current_user["id"], "founder_match")
+    if not can_afford:
+        return _error(f"Insufficient credits. Need {cost}, have {balance}.", 403)
+
     idea = await _get_idea_or_404(db, idea_id, current_user["id"])
 
     prompt = f"""You are evaluating how well a founder matches their startup idea.
@@ -109,6 +118,7 @@ Return JSON:
         result = await asyncio.to_thread(GeminiService.call_gemini, prompt, "founder_match")
         if result["success"]:
             await db.ideas.update_one({"_id": idea["_id"]}, {"$set": {"founder_match_score": result["data"].get("match_score", 0)}})
+            await CreditService.deduct(db, current_user["id"], "founder_match", idea_id)
             return _success(data=result["data"])
         return _error("Analysis is taking longer than usual. Please try again.", 500)
     except Exception:
@@ -118,8 +128,14 @@ Return JSON:
 @router.post("/{idea_id}/stress-test")
 async def stress_test(idea_id: int, current_user: dict = Depends(get_current_user)):
     from app_fastapi import get_db
+    from app_fastapi.services.credit_service import CreditService
     from app.services.gemini_service import GeminiService
     db = get_db()
+
+    can_afford, cost, balance = await CreditService.can_afford(db, current_user["id"], "stress_test")
+    if not can_afford:
+        return _error(f"Insufficient credits. Need {cost}, have {balance}.", 403)
+
     idea = await _get_idea_or_404(db, idea_id, current_user["id"])
     analysis = idea.get("analysis_data") or {}
 
@@ -157,6 +173,7 @@ Rules:
     try:
         result = await asyncio.to_thread(GeminiService.call_gemini, prompt, "stress_test")
         if result["success"]:
+            await CreditService.deduct(db, current_user["id"], "stress_test", idea_id)
             return _success(data=result["data"])
         return _error("Analysis is taking longer than usual. Please try again.", 500)
     except Exception:
@@ -166,8 +183,14 @@ Rules:
 @router.post("/{idea_id}/one-liner")
 async def one_line_pitch(idea_id: int, current_user: dict = Depends(get_current_user)):
     from app_fastapi import get_db
+    from app_fastapi.services.credit_service import CreditService
     from app.services.gemini_service import GeminiService
     db = get_db()
+
+    can_afford, cost, balance = await CreditService.can_afford(db, current_user["id"], "one_liner")
+    if not can_afford:
+        return _error(f"Insufficient credits. Need {cost}, have {balance}.", 403)
+
     idea = await _get_idea_or_404(db, idea_id, current_user["id"])
     analysis = idea.get("analysis_data") or {}
 
@@ -195,6 +218,7 @@ Each pitch must be specific to {idea.get('title')}. No generic filler."""
     try:
         result = await asyncio.to_thread(GeminiService.call_gemini, prompt, "one_liner")
         if result["success"]:
+            await CreditService.deduct(db, current_user["id"], "one_liner", idea_id)
             return _success(data=result["data"])
         return _error("Analysis is taking longer than usual. Please try again.", 500)
     except Exception:
@@ -238,7 +262,14 @@ async def layers_finalize(body: LayersFinalizeRequest, current_user: dict = Depe
     from app_fastapi import get_db
     from app.services.layers_service import LayersService
     from app.services.idea_analysis_service import IdeaAnalysisService
+    from app_fastapi.services.credit_service import CreditService, require_credits, require_idea_slot
     db = get_db()
+
+    # A Layers session is charged once, on finalize — the intermediate chat
+    # turns stay free so an abandoned conversation never costs the user.
+    # Finalizing also creates an idea, so the plan's idea limit applies too.
+    await require_idea_slot(db, current_user["id"])
+    await require_credits(db, current_user["id"], "ai_layers_session")
 
     try:
         synthesized = await asyncio.to_thread(LayersService.synthesize_idea, body.initial_idea, body.history)
@@ -263,15 +294,21 @@ async def layers_finalize(body: LayersFinalizeRequest, current_user: dict = Depe
         }
         await db.ideas.insert_one(idea_doc)
 
-        # Background analysis
-        async def _run_analysis_and_credit(idea_id, user_id):
-            try:
-                await asyncio.to_thread(IdeaAnalysisService.process_idea_analysis, idea_id)
-                await db.users.update_one({"id": user_id}, {"$inc": {"api_credits_used": 2}})
-            except Exception as e:
-                print(f"[Background Analysis] Error for idea #{idea_id}: {e}")
-
-        asyncio.create_task(_run_analysis_and_credit(idea_id, current_user["id"]))
+        # Dispatch durable background analysis via Inngest
+        try:
+            await inngest_client.send(inngest.Event(
+                name="idea/analysis.requested",
+                data={"idea_id": idea_id, "user_id": current_user["id"]},
+            ))
+        except Exception:
+            # Fallback: run in-process if Inngest is unavailable
+            async def _run_analysis_and_credit(iid, uid):
+                try:
+                    await asyncio.to_thread(IdeaAnalysisService.process_idea_analysis, iid)
+                    await db.users.update_one({"id": uid}, {"$inc": {"api_credits_used": 2}})
+                except Exception as e:
+                    print(f"[Background Analysis] Error for idea #{iid}: {e}")
+            asyncio.create_task(_run_analysis_and_credit(idea_id, current_user["id"]))
 
         return _success(data={"idea": _idea_to_dict(idea_doc)}, message="Idea created — analysis started in background", status=201)
     except Exception as e:
@@ -508,6 +545,7 @@ async def mark_alert_read(alert_id: int, current_user: dict = Depends(get_curren
 async def trigger_competitor_scan(idea_id: int, current_user: dict = Depends(get_current_user)):
     from app_fastapi import get_db
     from app.services.competitor_monitoring_service import CompetitorMonitoringService
+    from app_fastapi.services.credit_service import CreditService, require_credits
     db = get_db()
     await _get_idea_or_404(db, idea_id, current_user["id"])
 
@@ -515,10 +553,13 @@ async def trigger_competitor_scan(idea_id: int, current_user: dict = Depends(get
     if not watch:
         return _error("No watch configured", 404)
 
+    await require_credits(db, current_user["id"], "competitor_scan")
+
     result = await asyncio.to_thread(CompetitorMonitoringService.scan_competitors, watch["id"])
     if "error" in result:
         return _error(result["error"])
 
+    await CreditService.deduct(db, current_user["id"], "competitor_scan", idea_id)
     return _success(data=result, message=f"Scan completed. Found {result.get('new_alerts', 0)} new alerts.")
 
 
@@ -530,7 +571,10 @@ async def trigger_competitor_scan(idea_id: int, current_user: dict = Depends(get
 async def upload_voice(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     from app_fastapi import get_db
     from app.services.gemini_service import GeminiService
+    from app_fastapi.services.credit_service import CreditService, require_credits
     db = get_db()
+
+    await require_credits(db, current_user["id"], "voice_extraction")
 
     try:
         file_data = await file.read()
@@ -547,6 +591,7 @@ Output JSON format: {"title": "", "description": "exact transcribed text here"}"
 
         cleaned = extracted.replace("```json", "").replace("```", "").strip()
         idea_data = json.loads(cleaned)
+        await CreditService.deduct(db, current_user["id"], "voice_extraction")
         await db.users.update_one({"id": current_user["id"]}, {"$inc": {"api_credits_used": 1}})
         return _success(data=idea_data, message="Voice processed successfully")
     except Exception as e:
@@ -557,7 +602,10 @@ Output JSON format: {"title": "", "description": "exact transcribed text here"}"
 async def upload_file(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     from app_fastapi import get_db
     from app.services.gemini_service import GeminiService
+    from app_fastapi.services.credit_service import CreditService, require_credits
     db = get_db()
+
+    await require_credits(db, current_user["id"], "voice_extraction")
 
     try:
         file_data = await file.read()
@@ -574,6 +622,7 @@ Output JSON format: {"title": "", "description": "exact extracted text here"}"""
 
         cleaned = extracted.replace("```json", "").replace("```", "").strip()
         idea_data = json.loads(cleaned)
+        await CreditService.deduct(db, current_user["id"], "voice_extraction")
         await db.users.update_one({"id": current_user["id"]}, {"$inc": {"api_credits_used": 1}})
         return _success(data=idea_data, message="File processed successfully")
     except Exception as e:

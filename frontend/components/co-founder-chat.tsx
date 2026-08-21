@@ -166,8 +166,8 @@ export function CoFounderChat({
                                     >
                                         <div
                                             className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "user"
-                                                ? "bg-indigo-600 text-white"
-                                                : "bg-slate-100 text-slate-600"
+                                                ? "bg-gradient-to-br from-brand to-brand-violet text-white"
+                                                : "bg-white/[0.06] text-brand-cyan border border-white/[0.08]"
                                                 }`}
                                         >
                                             {msg.role === "user" ? (
@@ -177,9 +177,9 @@ export function CoFounderChat({
                                             )}
                                         </div>
                                         <div
-                                            className={`p-3 rounded-lg text-sm ${msg.role === "user"
-                                                ? "bg-indigo-600 text-white"
-                                                : "bg-slate-100 text-slate-800"
+                                            className={`p-3 rounded-xl text-sm ${msg.role === "user"
+                                                ? "bg-brand/90 text-white shadow-[0_4px_16px_-4px_oklch(0.585_0.222_277/0.4)]"
+                                                : "bg-white/[0.05] text-foreground/90 border border-white/[0.06]"
                                                 }`}
                                         >
                                             {msg.content}
@@ -190,10 +190,10 @@ export function CoFounderChat({
                             {isLoading && (
                                 <div className="flex gap-3 justify-start">
                                     <div className="flex items-start gap-2 max-w-[80%]">
-                                        <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 bg-slate-100 text-slate-600">
+                                        <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 bg-white/[0.06] text-brand-cyan border border-white/[0.08]">
                                             <Bot className="h-4 w-4" />
                                         </div>
-                                        <div className="bg-slate-100 p-3 rounded-lg flex items-center gap-2 text-slate-500 text-sm">
+                                        <div className="bg-white/[0.05] border border-white/[0.06] p-3 rounded-xl flex items-center gap-2 text-muted-foreground text-sm">
                                             <Loader2 className="h-4 w-4 animate-spin" />
                                             Thinking...
                                         </div>

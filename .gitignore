@@ -25,3 +25,8 @@ docker-compose.override.yml
 # ─── Misc ──────────────────────────────────────────────────────────────
 *.log
 *.tmp
+
+# Local .env backups — never commit (contain real secrets)
+.env.backup*
+*.env.backup*
+.env.*.backup

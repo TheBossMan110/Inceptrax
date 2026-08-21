@@ -32,7 +32,7 @@ export function Refinable({ path, children, className }: RefinableProps) {
     return (
         <div className={cn("relative group transition-all duration-300", className)}>
             {/* Highlight Background */}
-            <div className="bg-red-50/80 rounded-lg -m-1 p-1 ring-1 ring-red-200">
+            <div className="bg-danger/10 rounded-lg -m-1 p-1 ring-1 ring-danger/30">
                 {content}
             </div>
 
@@ -44,7 +44,7 @@ export function Refinable({ path, children, className }: RefinableProps) {
                         e.stopPropagation()
                         rejectChanges()
                     }}
-                    className="h-6 w-6 rounded-full bg-red-100 hover:bg-red-200 text-red-600 p-0 shadow-sm border border-red-200"
+                    className="h-6 w-6 rounded-full bg-danger/15 hover:bg-danger/25 text-danger p-0 shadow-sm border border-danger/30"
                     title="Reject Changes"
                 >
                     <X className="h-3 w-3" />
@@ -55,7 +55,7 @@ export function Refinable({ path, children, className }: RefinableProps) {
                         e.stopPropagation()
                         confirmChanges()
                     }}
-                    className="h-6 w-6 rounded-full bg-green-100 hover:bg-green-200 text-green-600 p-0 shadow-sm border border-green-200"
+                    className="h-6 w-6 rounded-full bg-success/15 hover:bg-success/25 text-success p-0 shadow-sm border border-success/30"
                     title="Accept Changes"
                 >
                     <Check className="h-3 w-3" />

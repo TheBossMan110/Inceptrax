@@ -125,6 +125,7 @@ async def lifespan(app: FastAPI):
     _init_sentry()
     await _connect_mongodb()
     await _ensure_indexes(motor_db)
+    await _backfill_credit_fields(motor_db)
     print("[FastAPI] Application started successfully.")
 
     yield
@@ -157,9 +158,37 @@ async def _ensure_indexes(db):
         await db.competitor_watch.create_index("idea_id")
         await db.competitor_watch.create_index("id", unique=True)
         await db.counters.create_index("_id")
+        # Credit system indexes
+        await db.credit_transactions.create_index([("user_id", 1), ("created_at", -1)])
+        await db.credit_transactions.create_index("id", unique=True)
+        # Agent indexes (spec §15.2)
+        await db.agent_runs.create_index([("agent_type", 1), ("idea_id", 1), ("status", 1)])
+        await db.agent_runs.create_index([("idea_id", 1), ("started_at", -1)])
+        await db.agent_runs.create_index("id", unique=True)
+        await db.idea_watcher_runs.create_index([("idea_id", 1), ("created_at", -1)])
+        await db.idea_watcher_runs.create_index("id", unique=True)
+        await db.idea_watcher_settings.create_index("idea_id", unique=True)
+        await db.pivot_suggestions.create_index([("idea_id", 1), ("created_at", -1)])
+        await db.pivot_suggestions.create_index("id", unique=True)
+        await db.idea_context.create_index([("idea_id", 1), ("user_id", 1)])
+        await db.rag_queries.create_index([("user_id", 1), ("created_at", -1)])
+        await db.competitor_snapshots.create_index([("idea_id", 1), ("snapshot_date", -1)])
         print("[MongoDB] Indexes created successfully.")
     except Exception as e:
         print(f"[MongoDB] Index creation warning: {e}")
+
+
+async def _backfill_credit_fields(db):
+    """Backfill credit_balance and subscription_tier for existing users."""
+    try:
+        result = await db.users.update_many(
+            {"credit_balance": {"$exists": False}},
+            {"$set": {"credit_balance": 50, "subscription_tier": "free"}},
+        )
+        if result.modified_count > 0:
+            print(f"[Migration] Backfilled credit fields for {result.modified_count} users.")
+    except Exception as e:
+        print(f"[Migration] Backfill warning: {e}")
 
 
 # ─── Create App ────────────────────────────────────────────────────────────────
@@ -203,6 +232,9 @@ def create_app() -> FastAPI:
     from app_fastapi.routers.admin_router import router as admin_router
     from app_fastapi.routers.notification_router import router as notification_router
     from app_fastapi.routers.contact_router import router as contact_router
+    from app_fastapi.routers.billing_router import router as billing_router
+    from app_fastapi.routers.rag_router import router as rag_router
+    from app_fastapi.routers.agents_router import router as agents_router
 
     app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
     app.include_router(user_router, prefix="/api/users", tags=["users"])
@@ -215,5 +247,61 @@ def create_app() -> FastAPI:
     app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
     app.include_router(notification_router, prefix="/api/notifications", tags=["notifications"])
     app.include_router(contact_router, prefix="/api", tags=["contact"])
+    app.include_router(billing_router, prefix="/api/billing", tags=["billing"])
+    app.include_router(rag_router, prefix="/api/ideas", tags=["rag"])
+    app.include_router(agents_router, prefix="/api/agents", tags=["agents"])
+
+    # ─── Inngest Background Jobs ──────────────────────────────────────────
+    try:
+        import inngest.fast_api
+        from app_fastapi.inngest_client import inngest_client
+        from app_fastapi.inngest_functions.analysis import run_idea_analysis
+        from app_fastapi.inngest_functions.competitor_scan import (
+            competitor_weekly_scan,
+            competitor_manual_scan,
+        )
+        from app_fastapi.inngest_functions.email import send_email
+        from app_fastapi.inngest_functions.idea_watcher import (
+            idea_watcher_weekly,
+            idea_watcher_manual,
+        )
+        from app_fastapi.inngest_functions.progress_coach import (
+            progress_coach_daily,
+            progress_coach_manual,
+        )
+        from app_fastapi.inngest_functions.competitor_watcher import (
+            competitor_watcher_weekly,
+            competitor_watcher_manual,
+        )
+        from app_fastapi.inngest_functions.pivot_suggester import (
+            pivot_manual,
+            pivot_on_threat,
+            pivot_on_disruption,
+        )
+
+        inngest.fast_api.serve(
+            app,
+            inngest_client,
+            [
+                run_idea_analysis,
+                competitor_weekly_scan,
+                competitor_manual_scan,
+                send_email,
+                idea_watcher_weekly,
+                idea_watcher_manual,
+                progress_coach_daily,
+                progress_coach_manual,
+                competitor_watcher_weekly,
+                competitor_watcher_manual,
+                pivot_manual,
+                pivot_on_threat,
+                pivot_on_disruption,
+            ],
+        )
+        print("[Inngest] Background job functions registered.")
+    except ImportError:
+        print("[Inngest] inngest package not installed — background jobs disabled.")
+    except Exception as e:
+        print(f"[Inngest] Setup warning: {e}")
 
     return app

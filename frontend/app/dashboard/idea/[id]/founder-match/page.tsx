@@ -2,16 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import {
-  Loader2, UserCheck, AlertTriangle, CheckCircle2, ArrowRight,
-  Users, Lightbulb, Target, RefreshCw,
+  UserCheck, AlertTriangle, CheckCircle2, ArrowRight,
+  Users, Target, RefreshCw,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api"
-import { cn } from "@/lib/utils"
 import Link from "next/link"
 
 interface MatchData {
@@ -21,6 +18,54 @@ interface MatchData {
   gaps: string[]
   recommended_cofounder: string
   advice: string
+}
+
+const EASE = [0.22, 1, 0.36, 1] as const
+
+const listVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+}
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } },
+}
+
+/* Animated circular score ring */
+function MatchRing({ score }: { score: number }) {
+  const R = 44
+  const C = 2 * Math.PI * R
+  return (
+    <div className="relative h-36 w-36">
+      <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
+        <circle cx="50" cy="50" r={R} fill="none" stroke="oklch(1 0 0 / 0.08)" strokeWidth="7" />
+        <motion.circle
+          cx="50"
+          cy="50"
+          r={R}
+          fill="none"
+          stroke="url(#matchScoreGradient)"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={C}
+          initial={{ strokeDashoffset: C }}
+          animate={{ strokeDashoffset: C - (C * Math.min(100, Math.max(0, score))) / 100 }}
+          transition={{ duration: 1.2, ease: EASE }}
+        />
+        <defs>
+          <linearGradient id="matchScoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="oklch(0.75 0.13 215)" />
+            <stop offset="55%" stopColor="oklch(0.585 0.222 277)" />
+            <stop offset="100%" stopColor="oklch(0.64 0.24 305)" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-4xl font-bold tabular-nums tracking-tight">{score}</span>
+        <span className="text-[9px] font-mono uppercase tracking-[0.22em] text-muted-foreground">/ 100</span>
+      </div>
+    </div>
+  )
 }
 
 export default function FounderMatchPage() {
@@ -46,11 +91,11 @@ export default function FounderMatchPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[60vh] items-center justify-center gap-4">
+      <div className="flex flex-col h-[60vh] items-center justify-center gap-5 animate-fade-in">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" />
-          <div className="relative h-14 w-14 rounded-full bg-blue-500/10 flex items-center justify-center">
-            <UserCheck className="h-6 w-6 text-blue-500 animate-pulse" />
+          <div className="absolute inset-0 rounded-2xl bg-brand/25 blur-xl animate-pulse-glow" />
+          <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/25 flex items-center justify-center">
+            <UserCheck className="h-6 w-6 text-brand-cyan" />
           </div>
         </div>
         <p className="font-semibold text-foreground">Analyzing Founder-Idea Fit…</p>
@@ -61,75 +106,100 @@ export default function FounderMatchPage() {
   if (error || !data) {
     return (
       <div className="flex flex-col h-[60vh] items-center justify-center gap-4 text-center">
-        <AlertTriangle className="h-12 w-12 text-destructive" />
-        <p className="text-lg font-bold">{error || "Failed"}</p>
-        <Button onClick={fetchMatch} className="gap-2"><RefreshCw className="h-4 w-4" /> Try Again</Button>
+        <div className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/25 flex items-center justify-center">
+          <AlertTriangle className="h-6 w-6 text-danger" />
+        </div>
+        <p className="text-lg font-semibold">{error || "Failed"}</p>
+        <Button onClick={fetchMatch} className="gap-2 rounded-xl bg-primary hover:bg-primary/90 glow-primary press">
+          <RefreshCw className="h-4 w-4" /> Try Again
+        </Button>
       </div>
     )
   }
 
-  const scoreColor = data.match_score >= 75 ? "text-green-600" : data.match_score >= 50 ? "text-amber-600" : "text-red-600"
+  const verdictBadge =
+    data.match_score >= 75
+      ? "bg-success/10 text-success border-success/25"
+      : data.match_score >= 50
+        ? "bg-warning/10 text-warning border-warning/25"
+        : "bg-danger/10 text-danger border-danger/25"
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-4xl mx-auto animate-fade-up">
       <div>
-        <Badge className="bg-blue-500/10 text-blue-600 border-none mb-2"><UserCheck className="h-3 w-3 mr-1" /> Founder Match</Badge>
-        <h1 className="text-3xl font-bold tracking-tight">Founder-Idea Match Score</h1>
-        <p className="text-muted-foreground mt-1">How well do your skills align with this idea?</p>
+        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[11px] font-mono uppercase tracking-[0.18em] text-brand-cyan mb-3">
+          <UserCheck className="h-3 w-3" /> Founder Match
+        </span>
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-gradient-subtle">Founder-Idea Match Score</h1>
+        <p className="text-muted-foreground mt-1 text-sm">How well do your skills align with this idea?</p>
       </div>
 
       {/* Score Card */}
-      <Card className="border-2 overflow-hidden">
-        <CardContent className="p-8 flex flex-col md:flex-row items-center gap-8">
-          <div className="text-center">
-            <div className={cn("text-6xl font-black", scoreColor)}>{data.match_score}</div>
-            <p className="text-sm text-muted-foreground mt-1">out of 100</p>
+      <div className="relative rounded-2xl border-gradient overflow-hidden">
+        <div className="p-8 flex flex-col md:flex-row items-center gap-8">
+          <MatchRing score={data.match_score} />
+          <div className="flex-1 text-center md:text-left">
+            <span className={`inline-block text-sm font-semibold px-3 py-1 rounded-full border mb-3 ${verdictBadge}`}>
+              {data.verdict}
+            </span>
+            <p className="text-foreground/90 leading-relaxed">{data.advice}</p>
           </div>
-          <div className="flex-1">
-            <Badge variant="outline" className="text-sm font-semibold mb-2">{data.verdict}</Badge>
-            <p className="text-foreground leading-relaxed">{data.advice}</p>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Strengths */}
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><CheckCircle2 className="h-5 w-5" /> Your Strengths</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
+        <div className="card-premium rounded-2xl p-6">
+          <h3 className="flex items-center gap-2.5 font-semibold text-base mb-4">
+            <span className="w-8 h-8 rounded-lg bg-success/10 border border-success/25 flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+            </span>
+            Your Strengths
+          </h3>
+          <motion.div variants={listVariants} initial="hidden" animate="show" className="space-y-3">
             {data.strengths.map((s, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm">
-                <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+              <motion.div key={i} variants={itemVariants} className="flex items-start gap-2.5 text-sm text-muted-foreground leading-relaxed">
+                <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
                 <span>{s}</span>
-              </div>
+              </motion.div>
             ))}
-          </CardContent>
-        </Card>
+          </motion.div>
+        </div>
 
         {/* Gaps */}
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2 text-amber-600"><AlertTriangle className="h-5 w-5" /> Skills to Develop</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
+        <div className="card-premium rounded-2xl p-6">
+          <h3 className="flex items-center gap-2.5 font-semibold text-base mb-4">
+            <span className="w-8 h-8 rounded-lg bg-warning/10 border border-warning/25 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+            </span>
+            Skills to Develop
+          </h3>
+          <motion.div variants={listVariants} initial="hidden" animate="show" className="space-y-3">
             {data.gaps.map((g, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm">
-                <Target className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <motion.div key={i} variants={itemVariants} className="flex items-start gap-2.5 text-sm text-muted-foreground leading-relaxed">
+                <Target className="h-4 w-4 text-warning shrink-0 mt-0.5" />
                 <span>{g}</span>
-              </div>
+              </motion.div>
             ))}
-          </CardContent>
-        </Card>
+          </motion.div>
+        </div>
       </div>
 
       {/* Ideal Co-Founder */}
-      <Card className="bg-primary/5 border-primary/20">
-        <CardHeader><CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-primary" /> Ideal Co-Founder Profile</CardTitle></CardHeader>
-        <CardContent>
-          <p className="text-foreground leading-relaxed">{data.recommended_cofounder}</p>
-          <Link href="/dashboard/cofounder">
-            <Button className="mt-4 gap-2"><Users className="h-4 w-4" /> Find Co-Founders <ArrowRight className="h-4 w-4" /></Button>
-          </Link>
-        </CardContent>
-      </Card>
+      <div className="relative rounded-2xl border-gradient p-6">
+        <h3 className="flex items-center gap-2.5 font-semibold text-base mb-3">
+          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center">
+            <Users className="h-4 w-4 text-brand-cyan" />
+          </span>
+          Ideal Co-Founder <span className="accent-serif text-gradient">Profile</span>
+        </h3>
+        <p className="text-foreground/90 leading-relaxed text-sm">{data.recommended_cofounder}</p>
+        <Link href="/dashboard/cofounder">
+          <Button className="mt-5 gap-2 rounded-xl bg-primary hover:bg-primary/90 glow-primary shimmer press">
+            <Users className="h-4 w-4" /> Find Co-Founders <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   )
 }

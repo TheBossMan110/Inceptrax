@@ -49,7 +49,7 @@ class EmailService:
                     "Content-Type": "application/json",
                 },
                 json={
-                    "from": "Inceptrax <onboarding@resend.dev>",
+                    "from": os.environ.get("EMAIL_FROM", "Inceptrax <onboarding@resend.dev>"),
                     "to": [recipient],
                     "subject": f"[{type.upper()}] {subject}",
                     "html": html_body,
@@ -67,6 +67,49 @@ class EmailService:
 
         except Exception as e:
             logging.error(f"[Resend] Failed: {str(e)}")
+            return False, str(e)
+
+    @staticmethod
+    def send_email(to, subject, html):
+        """
+        Send a transactional email to a specific recipient.
+
+        Unlike send_contact_email (which always routes to the admin inbox),
+        this delivers to `to` — used for agent digests, welcome mail, and any
+        other user-facing message. Returns (success, message).
+        """
+        api_key = os.environ.get('RESEND_API_KEY', '')
+        if not api_key:
+            logging.error("[Resend] RESEND_API_KEY not set — cannot send transactional email")
+            return False, "Email service not configured"
+
+        sender = os.environ.get('EMAIL_FROM', 'Inceptrax <onboarding@resend.dev>')
+
+        try:
+            response = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": sender,
+                    "to": [to],
+                    "subject": subject,
+                    "html": html,
+                },
+                timeout=15
+            )
+
+            if response.status_code in (200, 201):
+                logging.info(f"[Resend] Transactional email sent to {to}: {subject}")
+                return True, "Email sent via Resend"
+
+            logging.error(f"[Resend] Error {response.status_code}: {response.text[:200]}")
+            return False, f"Resend error: {response.status_code}"
+
+        except Exception as e:
+            logging.error(f"[Resend] Transactional send failed: {str(e)}")
             return False, str(e)
 
     @staticmethod

@@ -43,6 +43,19 @@ class Settings(BaseSettings):
     # ─── Frontend ──────────────────────────────────────────────────────────
     frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
 
+    # ─── Background Jobs (Inngest) ────────────────────────────────────────
+    inngest_event_key: str = Field(default="", alias="INNGEST_EVENT_KEY")
+    inngest_signing_key: str = Field(default="", alias="INNGEST_SIGNING_KEY")
+
+    # ─── Payments (LemonSqueezy) ──────────────────────────────────────────
+    lemonsqueezy_api_key: str = Field(default="", alias="LEMONSQUEEZY_API_KEY")
+    lemonsqueezy_store_id: str = Field(default="", alias="LEMONSQUEEZY_STORE_ID")
+    lemonsqueezy_webhook_secret: str = Field(default="", alias="LEMONSQUEEZY_WEBHOOK_SECRET")
+    lemonsqueezy_pro_monthly_variant_id: str = Field(default="", alias="LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID")
+    lemonsqueezy_pro_yearly_variant_id: str = Field(default="", alias="LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID")
+    lemonsqueezy_team_monthly_variant_id: str = Field(default="", alias="LEMONSQUEEZY_TEAM_MONTHLY_VARIANT_ID")
+    lemonsqueezy_team_yearly_variant_id: str = Field(default="", alias="LEMONSQUEEZY_TEAM_YEARLY_VARIANT_ID")
+
     # ─── Observability ─────────────────────────────────────────────────────
     sentry_dsn: str = Field(default="", alias="SENTRY_DSN")
 

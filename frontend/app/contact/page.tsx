@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Aurora, Reveal } from "@/components/fx"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, Send } from "lucide-react"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -40,65 +41,104 @@ export default function ContactPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow py-20">
-        <div className="container px-4 max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Get in touch</h1>
-            <p className="text-muted-foreground">Have questions or feedback? We'd love to hear from you.</p>
-          </div>
+      <main className="flex-grow">
+        <section className="relative pt-36 pb-20 md:pt-44 md:pb-24 overflow-hidden">
+          <Aurora />
+          <div className="container px-4 relative z-10 max-w-2xl mx-auto">
+            <div className="text-center mb-12">
+              <Reveal>
+                <p className="eyebrow mb-4">Contact</p>
+              </Reveal>
+              <Reveal delay={0.08}>
+                <h1 className="mb-4 text-gradient-subtle">
+                  Get in <span className="accent-serif text-gradient glow-text">touch</span>
+                </h1>
+              </Reveal>
+              <Reveal delay={0.16}>
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  Have questions or feedback? We&apos;d love to hear from you.
+                </p>
+              </Reveal>
+            </div>
 
-          <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Your Name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
+            <Reveal delay={0.24} y={32}>
+              <div className="relative rounded-2xl border-gradient p-1.5 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]">
+                <div className="rounded-[14px] glass-strong p-6 md:p-8">
+                  <form className="space-y-6" onSubmit={handleSubmit}>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-xs font-medium text-muted-foreground">
+                          Name
+                        </Label>
+                        <Input
+                          id="name"
+                          placeholder="Your Name"
+                          className="rounded-xl bg-white/[0.03] border-white/10"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">
+                          Email
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="jane@example.com"
+                          className="rounded-xl bg-white/[0.03] border-white/10"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subject" className="text-xs font-medium text-muted-foreground">
+                        Subject
+                      </Label>
+                      <Input
+                        id="subject"
+                        placeholder="What is this about?"
+                        className="rounded-xl bg-white/[0.03] border-white/10"
+                        value={formData.subject}
+                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="message" className="text-xs font-medium text-muted-foreground">
+                        Message
+                      </Label>
+                      <Textarea
+                        id="message"
+                        placeholder="How can we help you?"
+                        className="min-h-[150px] rounded-xl bg-white/[0.03] border-white/10"
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full h-12 text-base rounded-xl gap-2 bg-primary hover:bg-primary/90 glow-primary shimmer press"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          Send Message <Send className="h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </form>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="jane@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                  />
-                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
-                <Input
-                  id="subject"
-                  placeholder="What is this about?"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <Textarea
-                  id="message"
-                  placeholder="How can we help you?"
-                  className="min-h-[150px]"
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full py-6 text-lg" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Send Message"}
-              </Button>
-            </form>
+            </Reveal>
           </div>
-        </div>
+        </section>
       </main>
       <Footer />
     </div>

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Loader2, Shield, User, Users, AlertTriangle, Bell, Eye, EyeOff } from "lucide-react"
+import { Shield, User, Users, AlertTriangle, Bell, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -22,10 +22,10 @@ function getPasswordStrength(pw: string): { level: number; label: string; color:
   if (/[A-Z]/.test(pw))        score++
   if (/[0-9]/.test(pw))        score++
   if (/[^A-Za-z0-9]/.test(pw)) score++
-  if (score <= 1) return { level: 1, label: "Weak",   color: "#ef4444" }
-  if (score <= 3) return { level: 2, label: "Fair",   color: "#f59e0b" }
-  if (score === 4) return { level: 3, label: "Good",  color: "#22c55e" }
-  return                        { level: 4, label: "Strong", color: "#ffffff" }
+  if (score <= 1) return { level: 1, label: "Weak",   color: "var(--danger)" }
+  if (score <= 3) return { level: 2, label: "Fair",   color: "var(--warning)" }
+  if (score === 4) return { level: 3, label: "Good",  color: "var(--success)" }
+  return                        { level: 4, label: "Strong", color: "var(--brand-cyan)" }
 }
 
 /* ── Toggle row ─────────────────────────────────────────────── */
@@ -33,7 +33,7 @@ function ToggleRow({ id, label, description, checked, onCheckedChange }: {
   id: string; label: string; description: string; checked: boolean; onCheckedChange: (v: boolean) => void
 }) {
   return (
-    <div className="flex items-center justify-between p-4 rounded-xl border bg-muted/30">
+    <div className="flex items-center justify-between gap-4 p-4 rounded-xl border border-white/[0.06] bg-white/[0.03] transition-colors hover:bg-white/[0.05]">
       <div>
         <p className="text-sm font-medium">{label}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
@@ -126,11 +126,22 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading your settings…</p>
+      <div className="space-y-6 max-w-3xl mx-auto pb-12">
+        <div className="space-y-2">
+          <div className="skeleton h-8 w-36" />
+          <div className="skeleton h-4 w-64" />
         </div>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="card-premium rounded-2xl p-6 space-y-4">
+            <div className="skeleton h-5 w-44" />
+            <div className="skeleton h-4 w-72" />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="skeleton h-10 w-full rounded-xl" />
+              <div className="skeleton h-10 w-full rounded-xl" />
+            </div>
+            <div className="skeleton h-9 w-32 rounded-xl" />
+          </div>
+        ))}
       </div>
     )
   }
@@ -140,22 +151,24 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-12">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Manage your account and preferences</p>
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-1">Manage your account and preferences</p>
       </div>
 
       {/* ── SECTION 1: Profile ─────────────────────────────── */}
-      <Card>
+      <Card className="card-premium rounded-2xl border-none shadow-none">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-muted-foreground" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shrink-0">
+              <User className="h-4 w-4 text-brand-cyan" />
+            </div>
             <CardTitle>Profile Information</CardTitle>
           </div>
           <CardDescription>Update your name and email address</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-foreground text-background flex items-center justify-center text-lg font-bold shrink-0">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-brand to-brand-violet text-white flex items-center justify-center text-lg font-bold shrink-0">
               {initials}
             </div>
             <div>
@@ -178,15 +191,17 @@ export default function SettingsPage() {
               <Input id="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </div>
           </div>
-          <Button onClick={handleSaveProfile} loading={saving}>Save Profile</Button>
+          <Button onClick={handleSaveProfile} loading={saving} className="rounded-xl bg-primary hover:bg-primary/90 press">Save Profile</Button>
         </CardContent>
       </Card>
 
       {/* ── SECTION 2: Security ────────────────────────────── */}
-      <Card>
+      <Card className="card-premium rounded-2xl border-none shadow-none">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-muted-foreground" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shrink-0">
+              <Shield className="h-4 w-4 text-brand-cyan" />
+            </div>
             <CardTitle>Security</CardTitle>
           </div>
           <CardDescription>Change your password</CardDescription>
@@ -232,15 +247,17 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
-          <Button onClick={handleResetPassword}>Reset Password</Button>
+          <Button onClick={handleResetPassword} className="rounded-xl bg-primary hover:bg-primary/90 press">Reset Password</Button>
         </CardContent>
       </Card>
 
       {/* ── SECTION 3: Notifications ───────────────────────── */}
-      <Card>
+      <Card className="card-premium rounded-2xl border-none shadow-none">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-muted-foreground" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shrink-0">
+              <Bell className="h-4 w-4 text-brand-cyan" />
+            </div>
             <CardTitle>Notifications</CardTitle>
           </div>
           <CardDescription>Control what emails you receive</CardDescription>
@@ -249,15 +266,17 @@ export default function SettingsPage() {
           <ToggleRow id="notif-analysis"  label="Analysis complete"     description="Get an email when your idea analysis finishes"         checked={notifs.email_analysis}    onCheckedChange={(v) => setNotifs({ ...notifs, email_analysis: v })} />
           <ToggleRow id="notif-cofounder" label="Co-founder messages"   description="Be notified when a founder sends you a message"        checked={notifs.cofounder_msg}     onCheckedChange={(v) => setNotifs({ ...notifs, cofounder_msg: v })} />
           <ToggleRow id="notif-platform"  label="Platform updates"      description="Product updates, new features, and announcements"      checked={notifs.platform_updates}  onCheckedChange={(v) => setNotifs({ ...notifs, platform_updates: v })} />
-          <Button onClick={() => toast.success("Notification preferences saved")} className="mt-2">Save Preferences</Button>
+          <Button onClick={() => toast.success("Notification preferences saved")} className="mt-2 rounded-xl bg-primary hover:bg-primary/90 press">Save Preferences</Button>
         </CardContent>
       </Card>
 
       {/* ── SECTION 4: Co-Founder Network ──────────────────── */}
-      <Card>
+      <Card className="card-premium rounded-2xl border-none shadow-none">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-muted-foreground" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand/25 to-brand-violet/15 border border-brand/20 flex items-center justify-center shrink-0">
+              <Users className="h-4 w-4 text-brand-cyan" />
+            </div>
             <CardTitle>Co-Founder Network</CardTitle>
           </div>
           <CardDescription>Set up your profile to find co-founders</CardDescription>
@@ -282,16 +301,18 @@ export default function SettingsPage() {
               )}
             </div>
           ))}
-          <Button onClick={handleSaveCoFounder} loading={savingCF}>Save Co-Founder Settings</Button>
+          <Button onClick={handleSaveCoFounder} loading={savingCF} className="rounded-xl bg-primary hover:bg-primary/90 press">Save Co-Founder Settings</Button>
         </CardContent>
       </Card>
 
       {/* ── SECTION 5: Danger Zone ─────────────────────────── */}
-      <Card className="border-destructive/50">
+      <Card className="card-premium rounded-2xl border-none shadow-none ring-1 ring-danger/30">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-danger/10 border border-danger/25 flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-4 w-4 text-danger" />
+            </div>
+            <CardTitle className="text-danger">Danger Zone</CardTitle>
           </div>
           <CardDescription>Permanently delete your account and all associated data</CardDescription>
         </CardHeader>
@@ -310,7 +331,7 @@ export default function SettingsPage() {
               className="max-w-xs"
             />
           </div>
-          <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleteConfirm !== "DELETE"}>
+          <Button variant="destructive" className="rounded-xl press" onClick={handleDeleteAccount} disabled={deleteConfirm !== "DELETE"}>
             Delete Account Permanently
           </Button>
         </CardContent>
