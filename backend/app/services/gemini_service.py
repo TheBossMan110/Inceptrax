@@ -70,7 +70,7 @@ class GeminiService:
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "llama-3.3-70b-versatile",
+                        "model": os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
                         "messages": [
                             {"role": "system", "content": sys_msg},
                             {"role": "user", "content": prompt}
@@ -145,7 +145,7 @@ class GeminiService:
                         "X-Title": "Inceptrax",
                     },
                     json={
-                        "model": "mistralai/mistral-small-3.1-24b-instruct:free",
+                        "model": os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free"),
                         "messages": [
                             {"role": "system", "content": sys_msg + "\n\nIMPORTANT: Your entire response must be a single valid JSON object. No markdown, no explanation, just JSON."},
                             {"role": "user", "content": prompt}
