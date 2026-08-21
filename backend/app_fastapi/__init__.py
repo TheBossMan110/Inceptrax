@@ -178,12 +178,16 @@ async def _ensure_indexes(db):
         print(f"[MongoDB] Index creation warning: {e}")
 
 
+def _free_tier_credits() -> int:
+    from app_fastapi.services.credit_service import TIER_CONFIG
+    return TIER_CONFIG["free"]["credits_per_month"]
+
 async def _backfill_credit_fields(db):
     """Backfill credit_balance and subscription_tier for existing users."""
     try:
         result = await db.users.update_many(
             {"credit_balance": {"$exists": False}},
-            {"$set": {"credit_balance": 50, "subscription_tier": "free"}},
+            {"$set": {"credit_balance": _free_tier_credits(), "subscription_tier": "free"}},
         )
         if result.modified_count > 0:
             print(f"[Migration] Backfilled credit fields for {result.modified_count} users.")

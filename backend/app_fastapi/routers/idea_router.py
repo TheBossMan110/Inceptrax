@@ -81,8 +81,15 @@ async def _get_idea_or_404(db, idea_id: int, user_id: int) -> dict:
 
 # ─── Background Analysis Runner ──────────────────────────────────────────────
 
-async def _run_background_analysis(idea_id: int):
-    """Run the sync IdeaAnalysisService.process_idea_analysis in a thread."""
+async def _run_background_analysis(idea_id: int, user_id: int = None, operation: str = "analysis"):
+    """
+    Run the analysis in-process when Inngest is unavailable.
+
+    This path must charge credits itself. The Inngest function deducts after
+    its own successful run, so without this the fallback would hand out full
+    analyses for free — which is exactly what happened before this was added.
+    Deduction stays AFTER success, so a failed run is never billed.
+    """
     try:
         from app.services.idea_analysis_service import IdeaAnalysisService
         # This service uses sync pymongo — run in thread to avoid blocking
@@ -90,6 +97,23 @@ async def _run_background_analysis(idea_id: int):
     except Exception as e:
         print(f"[Background Analysis] Error for idea #{idea_id}: {e}")
         traceback.print_exc()
+        return
+
+    if user_id is None:
+        return
+
+    try:
+        from app_fastapi import get_db
+        from app_fastapi.services.credit_service import CreditService
+
+        db = get_db()
+        idea = await db.ideas.find_one({"id": idea_id}, {"status": 1})
+        # Only charge for a run that actually finished.
+        if idea and idea.get("status") == "completed":
+            result = await CreditService.deduct(db, user_id, operation, idea_id)
+            print(f"[Background Analysis] Charged {operation} for idea #{idea_id}: {result}")
+    except Exception as e:
+        print(f"[Background Analysis] Credit deduction failed for idea #{idea_id}: {e}")
 
 
 # ─── CRUD Routes ──────────────────────────────────────────────────────────────
@@ -143,7 +167,7 @@ async def create_idea(body: CreateIdeaRequest, current_user: dict = Depends(get_
         ))
     except Exception:
         # Fallback: run in-process if Inngest is unavailable
-        asyncio.create_task(_run_background_analysis(idea_id))
+        asyncio.create_task(_run_background_analysis(idea_id, current_user["id"], "analysis"))
 
     return _success(data={"idea": _idea_to_dict(idea_doc)}, message="Idea created — analysis started", status=201)
 
@@ -275,7 +299,7 @@ async def reanalyze_idea(idea_id: int, current_user: dict = Depends(get_current_
             data={"idea_id": idea_id, "user_id": current_user["id"]},
         ))
     except Exception:
-        asyncio.create_task(_run_background_analysis(idea_id))
+        asyncio.create_task(_run_background_analysis(idea_id, current_user["id"], "reanalyze"))
     return _success(data={"idea": _idea_to_dict(idea)}, message="Re-analysis started")
 
 

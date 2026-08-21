@@ -131,11 +131,38 @@ class RAGService:
         ]))
         out.append(("idea", "Idea overview", core))
 
+        # Stage payloads live under `result_json`. Fall back to the other key
+        # names so this keeps working if the writer ever changes.
+        seen_stages = set()
         for stage in db.stage_results.find({"idea_id": idea_id}):
             name = stage.get("stage_name", "stage")
-            text = RAGService._flatten(stage.get("data") or stage.get("result") or {})
+            payload = (
+                stage.get("result_json")
+                or stage.get("data")
+                or stage.get("result")
+                or {}
+            )
+            if isinstance(payload, str):
+                import json as _json
+                try:
+                    payload = _json.loads(payload)
+                except Exception:
+                    payload = {"summary": payload}
+            text = RAGService._flatten(payload)
             if text:
+                seen_stages.add(name)
                 out.append(("stage_result", name.replace("_", " ").title(), text))
+
+        # Older ideas kept everything on the idea document instead of in
+        # stage_results. Index whatever is not already covered above.
+        analysis = idea.get("analysis_data") or {}
+        if isinstance(analysis, dict):
+            for key, value in analysis.items():
+                if key in seen_stages or key in ("overall_score", "scores"):
+                    continue
+                text = RAGService._flatten(value)
+                if text and len(text) > 40:
+                    out.append(("analysis", key.replace("_", " ").title(), text))
 
         for digest in db.idea_watcher_runs.find({"idea_id": idea_id}).sort("created_at", -1).limit(4):
             parts = [digest.get("intro", ""), digest.get("takeaway", "")]

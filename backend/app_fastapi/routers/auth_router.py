@@ -20,7 +20,8 @@ from fastapi.responses import JSONResponse
 from typing import Optional
 
 from app_fastapi.config import settings
-from app_fastapi.dependencies import get_current_user, optional_bearer
+from app_fastapi.dependencies import get_current_user
+from app_fastapi.services.credit_service import TIER_CONFIG, optional_bearer
 from app_fastapi.schemas import (
     RegisterRequest, LoginRequest, ForgotPasswordRequest,
     ResetPasswordRequest, RefreshTokenRequest,
@@ -164,7 +165,7 @@ async def register(body: RegisterRequest):
         "skills": None,
         "looking_for": None,
         "linkedin_url": None,
-        "credit_balance": 50,
+        "credit_balance": TIER_CONFIG["free"]["credits_per_month"],
         "subscription_tier": "free",
     }
     await db.users.insert_one(user_doc)
