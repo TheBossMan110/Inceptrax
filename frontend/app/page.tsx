@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { cn } from "@/lib/utils"
-import { Aurora, Reveal, RevealGroup, RevealItem, AnimatedCounter, SpotlightCard, Marquee } from "@/components/fx"
+import { Aurora, Reveal, RevealGroup, RevealItem, AnimatedCounter, SpotlightCard, Marquee, Parallax, ScrollFade, Magnetic } from "@/components/fx"
 import {
   ArrowRight,
   Target,
@@ -395,7 +395,11 @@ export default function LandingPage() {
       <main className="flex-grow">
         {/* ── Hero — open, luminous plane ───────────────────── */}
         <section className="relative pt-40 pb-24 md:pt-48 md:pb-32 overflow-hidden">
-          <Aurora />
+          {/* The backdrop drifts slower than the page, so the hero reads as a
+              plane floating above it rather than a flat block of colour. */}
+          <Parallax speed={-0.28} className="absolute inset-0 -z-10">
+            <Aurora />
+          </Parallax>
 
           {/* Sweeping light beam along the top edge */}
           <div aria-hidden className="absolute top-0 left-0 right-0 h-px overflow-hidden">
@@ -462,15 +466,17 @@ export default function LandingPage() {
 
               <Reveal delay={0.24}>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
-                  <Button
-                    size="lg"
-                    className="h-13 px-8 text-base gap-2 w-full sm:w-auto rounded-xl bg-primary hover:bg-primary/90 glow-primary shimmer press"
-                    asChild
-                  >
-                    <Link href="/register">
-                      Analyze Your Idea Free <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
+                  <Magnetic className="w-full sm:w-auto">
+                    <Button
+                      size="lg"
+                      className="h-13 px-8 text-base gap-2 w-full sm:w-auto rounded-xl bg-primary hover:bg-primary/90 glow-primary shimmer press"
+                      asChild
+                    >
+                      <Link href="/register">
+                        Analyze Your Idea Free <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </Magnetic>
                   <Button
                     size="lg"
                     variant="outline"
@@ -710,14 +716,14 @@ export default function LandingPage() {
           <div className="container px-4 max-w-5xl mx-auto relative text-center">
             <div className="divider-glow" />
             <div className="py-14 md:py-20">
-              <Reveal>
+              <ScrollFade lift={80}>
                 <AnimatedCounter
                   value={40}
                   prefix="$"
                   suffix="M+"
                   className="block text-[clamp(4rem,15vw,11rem)] font-semibold leading-[0.85] tracking-[-0.055em] text-gradient-subtle"
                 />
-              </Reveal>
+              </ScrollFade>
               <Reveal delay={0.12}>
                 <p className="mt-8 md:mt-10 text-lg md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed text-balance">
                   in potential wasted development hours{" "}
